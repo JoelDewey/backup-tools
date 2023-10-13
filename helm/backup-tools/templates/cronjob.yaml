@@ -1,0 +1,168 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "backup-tools.fullname" . }}
+  labels:
+    {{- include "backup-tools.labels" . | nindent 4 }}
+spec:
+  schedule: "{{ .Values.cronJob.schedule }}"
+  concurrencyPolicy: "{{ .Values.cronJob.concurrencyPolicy }}"
+  startingDeadlineSeconds: {{ .Values.cronJob.startingDeadlineSeconds }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+            {{- with .Values.podAnnotations }}
+          annotations:
+              {{- toYaml . | nindent 8 }}
+            {{- end }}
+          labels:
+              {{- include "backup-tools.selectorLabels" . | nindent 8 }}
+        spec:
+            {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+              {{- toYaml . | nindent 8 }}
+            {{- end }}
+          serviceAccountName: {{ include "backup-tools.serviceAccountName" . }}
+          securityContext:
+              {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}
+              securityContext:
+                  {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                {{- with .Values.env.config.app }}
+                - name: BACKUP_NAME
+                  value: "{{ .backupName }}"
+                - name: SOURCE_PATH
+                  value: "{{ .sourcePath }}"
+                - name: DESTINATION_PATH
+                  value: "{{ .destinationPath }}"
+                - name: MAX_NUMBER_OF_BACKUPS
+                  value: "{{ .maxNumberOfBackups }}"
+                - name: SCALE_DEPLOYMENT_ENABLED
+                  value: "{{ .scaleDeploymentEnabled }}"
+                - name: POSTGRES_BACKUP_ENABLED
+                  value: "{{ .postgresBackupEnabled }}"
+                - name: RUST_BACKTRACE
+                  value: "{{ .rustBacktrace }}"
+                - name: RUST_LOG
+                  value: "{{ .rustLog }}"
+                {{- end }}
+                {{- if .Values.env.config.app.postgresBackupEnabled }}
+                {{- with .Values.env.config.postgres }}
+                {{- if or .url .urlSecret }}
+                - name: POSTGRES_URL
+                  {{- if .url }}
+                  value: {{ .url }}
+                  {{- else }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .urlSecret.name }}
+                      key: {{ .urlSecret.key }}
+                  {{- end }}
+                {{- else }}
+                - name: POSTGRES_HOST
+                  {{- if .host }}
+                  value: {{ .host }}
+                  {{- else }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .hostSecret.name }}
+                      key: {{ .hostSecret.key }}
+                  {{- end }}
+                - name: POSTGRES_PORT
+                  value: {{ .port | default "5432" }}
+                - name: POSTGRES_DATABASE_NAME
+                  {{- if .databaseName }}
+                  value: {{ .databaseName }}
+                  {{- else }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .databaseNameSecret.name }}
+                      key: {{ .databaseNameSecret.key }}
+                  {{- end }}
+                - name: POSTGRES_USERNAME
+                  {{- if .username }}
+                  value: {{ .username }}
+                  {{- else }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .usernameSecret.name }}
+                      key: {{ .usernameSecret.key }}
+                  {{- end }}
+                - name: POSTGRES_PASSWORD
+                  {{- if .password }}
+                  value: {{ .password }}
+                  {{- else }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .passwordSecret.name }}
+                      key: {{ .passwordSecret.key }}
+                  {{- end }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
+                {{- with .Values.env.config.tar }}
+                - name: TAR_TIMEOUT
+                  value: "{{ .timeout }}"
+                {{- if .excludeFilePath }}
+                - name: TAR_EXCLUDE_FILE_PATH
+                  value: "{{ .excludeFilePath }}"
+                {{- end }}
+                {{- end }}
+              livenessProbe:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - ps -o comm | grep backup-tools
+                periodSeconds: 5
+              readinessProbe:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - ps -o comm | grep backup-tools
+                periodSeconds: 5
+              volumeMounts:
+                - name: source
+                  mountPath: "{{ .Values.env.config.app.sourcePath }}"
+                - name: destination
+                  mountPath: "{{ .Values.env.config.app.destinationPath }}"
+                {{- with .Values.volume }}
+                {{- range .sources }}
+                - name: {{ .name }}
+                  mountPath: {{ .mountpath }}
+                {{- end }}
+              {{- end }}
+              resources:
+                  {{- toYaml .Values.resources | nindent 16 }}
+            {{- with .Values.volume }}
+          volumes:
+            - name: source
+              emptyDir:
+                sizeLimit: 100Mi
+            - name: destination
+              persistentVolumeClaim:
+                claimName: {{ .destination.claimName }}
+            {{- range .sources }}
+            - name: {{ .name }}
+              persistentVolumeClaim:
+                claimName: {{ .claimName }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.nodeSelector }}
+          nodeSelector:
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.affinity }}
+          affinity:
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.tolerations }}
+          tolerations:
+              {{- toYaml . | nindent 12 }}
+            {{- end }}

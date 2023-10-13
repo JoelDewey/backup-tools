@@ -1,0 +1,15 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "backup-tools.jobRole" . }}
+  labels:
+    {{- include "backup-tools.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: apps
+  kind: Role
+  name: {{ include "backup-tools.jobRole" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "backup-tools.serviceAccountName" . }}
+{{- end }}

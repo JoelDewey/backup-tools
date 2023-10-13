@@ -1,0 +1,114 @@
+# Default values for backup-tools.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/joeldewey/backup-tools
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+role:
+  name: ""
+
+cronJob:
+  schedule: "10 3 * * 3"
+  concurrencyPolicy: "Replace"
+  startingDeadlineSeconds: 60
+
+podAnnotations: {}
+
+podSecurityContext:
+   fsGroup: 100
+
+securityContext:
+   capabilities:
+     drop:
+     - ALL
+   readOnlyRootFilesystem: true
+   runAsNonRoot: true
+   runAsUser: 1029
+   runAsGroup: 1029
+
+env:
+  config:
+    app:
+      backupName: "Backup"
+      sourcePath: "/source"
+      destinationPath: "/destination"
+      maxNumberOfBackups: 5
+      scaleDeploymentEnabled: true,
+      postgresBackupEnabled: true
+      rustBacktrace: 1
+      rustLog: "info"
+    k8s:
+      cacrtPath: ""
+      tokenPath: ""
+      serviceNamespace: ""
+      serviceDeploymentName: ""
+    postgres:
+      host: "localhost"
+      hostSecret: {}
+  #     name: ""
+  #     key: ""
+      port: ""
+      databaseName: "postgres"
+      databaseNameSecret: {}
+  #     name: ""
+  #     key: ""
+      username: "postgres"
+      usernameSecret: {}
+  #     name: ""
+  #     key: ""
+      password: "postgres"
+      passwordSecret: {}
+  #     name: ""
+  #     key: ""
+      url: "" # postgres://username:password@host:port
+      urlSecret: {}
+  #      name: ""
+  #      key: ""
+    tar:
+      timeout: 300 # seconds == 5 minutes
+      excludeFilePath: ""
+
+volume:
+  sources: []
+  # - name: ""
+  #   claimName: ""
+  #   mountPath: ""
+  destination:
+    claimName: ""
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

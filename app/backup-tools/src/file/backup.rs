@@ -41,10 +41,23 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
     } else {
         info!("Deleting the oldest backups as we've reached our max.");
         let skip = app_config.max_number_of_backups.checked_sub(1).unwrap_or(0);
+        let mut count = 0;
         previous_backups
             .iter()
             .skip(skip as usize)
-            .try_for_each(|b| remove_dir_all(&b.path).context("Error while deleting older backup."))
+            .try_for_each(|b| {
+                remove_dir_all(&b.path)
+                    .context("Error while deleting older backup.")
+                    .and_then(|r| {
+                        count += 1;
+                        info!(path=%&b.path.display(), "Deleted backup at the given path.");
+                        Ok(r)
+                    })
+            })
+            .and_then(|r| {
+                info!(total_deletes=count, "Finished deleting oldest backups.");
+                Ok(r)
+            })
     }
 }
 

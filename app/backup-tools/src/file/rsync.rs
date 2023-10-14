@@ -1,11 +1,11 @@
-use std::path::{Path, PathBuf};
-use std::time::Duration;
-use anyhow::{Context, Result};
-use crossbeam::channel::Receiver;
-use subprocess::{Popen, Redirection};
 use crate::app_config::AppConfig;
 use crate::common::process::wait_for_subprocess;
 use crate::file::config::RsyncConfig;
+use anyhow::{Context, Result};
+use crossbeam::channel::Receiver;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use subprocess::{Popen, Redirection};
 
 pub const INCREMENTAL_CONFIG_PREFIX: &str = "INCR_";
 pub const DEFAULT_TIMEOUT_SECS: u64 = 60 * 5; // 5 minutes
@@ -14,7 +14,7 @@ pub fn make_incremental_backup(
     app_config: &AppConfig,
     name: &Path,
     previous_backup: Option<&PathBuf>,
-    shutdown_rx: &Receiver<()>
+    shutdown_rx: &Receiver<()>,
 ) -> Result<()> {
     let destination_filepath = app_config.destination_path.clone().join(name);
     let tar_config = envy::prefixed(INCREMENTAL_CONFIG_PREFIX)
@@ -25,7 +25,12 @@ pub fn make_incremental_backup(
         |v| Duration::from_secs(v),
     );
 
-    let process = execute_rsync(&tar_config, &app_config.source_path, &destination_filepath, previous_backup)?;
+    let process = execute_rsync(
+        &tar_config,
+        &app_config.source_path,
+        &destination_filepath,
+        previous_backup,
+    )?;
     wait_for_subprocess(process, Some(timeout), shutdown_rx)
 }
 
@@ -33,7 +38,7 @@ fn execute_rsync(
     config: &RsyncConfig,
     source_path: &Path,
     destination_filepath: &Path,
-    previous_backup: Option<&PathBuf>
+    previous_backup: Option<&PathBuf>,
 ) -> Result<Popen> {
     let mut builder = subprocess::Exec::cmd("rsync")
         .stdout(Redirection::Pipe)

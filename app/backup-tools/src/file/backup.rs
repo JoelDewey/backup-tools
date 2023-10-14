@@ -1,5 +1,6 @@
 use crate::app_config::AppConfig;
 use crate::file::dir_entry_priority::DirEntryPriority;
+use crate::file::rsync::make_incremental_backup;
 use anyhow::{bail, Context, Result};
 use chrono::{DateTime, Utc};
 use crossbeam::channel::Receiver;
@@ -8,7 +9,6 @@ use std::fs;
 use std::fs::remove_dir_all;
 use std::path::{Path, PathBuf};
 use tracing::{info, warn};
-use crate::file::rsync::make_incremental_backup;
 
 pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
     info!("Beginning file backup.");
@@ -34,7 +34,9 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
         .context("Error while making incremental backup.")?;
 
     let backup_count = previous_backups.len() + 1; // Includes the backup we just made.
-    if app_config.max_number_of_backups == 0 || backup_count < app_config.max_number_of_backups as usize {
+    if app_config.max_number_of_backups == 0
+        || backup_count < app_config.max_number_of_backups as usize
+    {
         Ok(())
     } else {
         info!("Deleting the oldest backups as we've reached our max.");
@@ -42,9 +44,7 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
         previous_backups
             .iter()
             .skip(skip as usize)
-            .try_for_each(|b| {
-                remove_dir_all(&b.path).context("Error while deleting older backup.")
-            })
+            .try_for_each(|b| remove_dir_all(&b.path).context("Error while deleting older backup."))
     }
 }
 

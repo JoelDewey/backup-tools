@@ -5,45 +5,40 @@ use std::thread::sleep;
 use std::time::Duration;
 use tracing::{error, info};
 
-pub fn scale_deployment(scale: bool, inner: impl FnOnce() -> Result<()>) -> Result<()> {
-    if !scale {
-        info!("Deployment scaling disabled, executing backup immediately.");
-        inner()
+pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
+    let k8s_config = from_env::<K8sConfig>()?;
+    let k8s_client = DefaultK8sClient::new(&k8s_config)?;
+
+    let replica_count = k8s_client
+        .get_replica_count(
+            &k8s_config.service_namespace,
+            &k8s_config.service_deployment_name,
+        )
+        .context("Retrieving original replica count.")?;
+
+    if replica_count == 0 {
+        info!("Deployment replicas already at 0, no scale down needed.")
     } else {
-        let k8s_config = from_env::<K8sConfig>()?;
-        let k8s_client = DefaultK8sClient::new(&k8s_config)?;
-
-        let replica_count = k8s_client
-            .get_replica_count(
-                &k8s_config.service_namespace,
-                &k8s_config.service_deployment_name,
-            )
-            .context("Retrieving original replica count.")?;
-
-        if replica_count == 0 {
-            info!("Deployment replicas already at 0, no scale down needed.")
-        } else {
-            info!("Scaling down deployment...");
-            scale_down(&k8s_config, &k8s_client)
-                .map(|_| {
-                    info!("Finished scaling down deployment.");
-                })
-                .context("Failed to scale down deployment.")?;
-        }
-
-        if let Err(e) = inner() {
-            error!(ex=%e, "Executing inner backup process failed! Attempting to scale deployment up anyway.");
-        }
-
-        if replica_count == 0 {
-            info!("Deployment replicas were set to 0 initially so no scale up is required.")
-        } else {
-            scale_up(&k8s_config, &k8s_client, replica_count)
-                .context("Failed to scale up deployment after performing backups.")?;
-        }
-
-        Ok(())
+        info!("Scaling down deployment...");
+        scale_down(&k8s_config, &k8s_client)
+            .map(|_| {
+                info!("Finished scaling down deployment.");
+            })
+            .context("Failed to scale down deployment.")?;
     }
+
+    if let Err(e) = inner() {
+        error!(ex=%e, "Executing inner backup process failed! Attempting to scale deployment up anyway.");
+    }
+
+    if replica_count == 0 {
+        info!("Deployment replicas were set to 0 initially so no scale up is required.")
+    } else {
+        scale_up(&k8s_config, &k8s_client, replica_count)
+            .context("Failed to scale up deployment after performing backups.")?;
+    }
+
+    Ok(())
 }
 
 fn scale_down(config: &K8sConfig, client: &impl K8sClient) -> Result<i32> {

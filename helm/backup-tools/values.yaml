@@ -56,6 +56,9 @@ env:
       postgresBackupEnabled: true
       rustBacktrace: 1
       rustLog: "info"
+    incremental:
+      timeout: 300 # seconds == 5 minutes
+      excludeFilePath: ""
     k8s:
       cacrtPath: ""
       tokenPath: ""
@@ -83,9 +86,6 @@ env:
       urlSecret: {}
   #      name: ""
   #      key: ""
-    tar:
-      timeout: 300 # seconds == 5 minutes
-      excludeFilePath: ""
 
 volume:
   sources: []

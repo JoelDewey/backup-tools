@@ -33,15 +33,7 @@ impl PartialOrd for DirEntryPriority {
 
 impl Ord for DirEntryPriority {
     fn cmp(&self, other: &Self) -> Ordering {
-        // If self was created before other, it should be considered greater.
-        // Placed into a max heap, this means the top item is the oldest.
-        if self.created < other.created {
-            Ordering::Greater
-        } else if self.created > other.created {
-            Ordering::Less
-        } else {
-            Ordering::Equal
-        }
+        self.created.cmp(&other.created)
     }
 }
 
@@ -56,7 +48,7 @@ mod test {
     use std::time::Duration;
 
     #[test]
-    fn cmp_givenolder_returnsgreater() {
+    fn cmp_givenolder_returnsless() {
         // Arrange
         let temp_dir = temp_dir().join("cmp_givenolder_returnsgreater");
         fs::create_dir(&temp_dir).expect("Failed to create temporary file.");
@@ -78,6 +70,6 @@ mod test {
         fs::remove_dir_all(&temp_dir).expect("Failed to delete files.");
 
         // Act + Assert
-        assert_eq!(files[0].cmp(&files[1]), Ordering::Greater);
+        assert_eq!(files[0].cmp(&files[1]), Ordering::Less);
     }
 }

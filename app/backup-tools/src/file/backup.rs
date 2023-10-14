@@ -1,14 +1,14 @@
 use crate::app_config::AppConfig;
 use crate::file::dir_entry_priority::DirEntryPriority;
-use crate::file::tar::make_tar_gz;
 use anyhow::{bail, Context, Result};
 use chrono::{DateTime, Utc};
 use crossbeam::channel::Receiver;
 use std::collections::BinaryHeap;
 use std::fs;
-use std::fs::remove_file;
+use std::fs::remove_dir_all;
 use std::path::{Path, PathBuf};
 use tracing::{info, warn};
+use crate::file::rsync::make_incremental_backup;
 
 pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
     info!("Beginning file backup.");
@@ -21,21 +21,30 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
 
     let now: DateTime<Utc> = Utc::now();
     let filename = PathBuf::from(format!(
-        "{}_{}.tar.gz",
+        "{}_{}",
         now.format("%F_%H%M%S"),
         &app_config.backup_name
     ));
 
-    let oldest_filepath = get_oldest_backup(&app_config)?;
+    let previous_backups = get_previous_backups(app_config)?;
 
+    let latest = previous_backups.peek().map(|e| &e.path);
     info!(filename=%filename.display(), "Creating backup.");
-    make_tar_gz(app_config, &filename, shutdown_rx).context("Error while creating tar file.")?;
+    make_incremental_backup(app_config, &filename, latest, shutdown_rx)
+        .context("Error while making incremental backup.")?;
 
-    if let Some(filepath) = oldest_filepath {
-        info!(filepath=%filepath.display(), "Deleting oldest backup as we've reached our max.");
-        remove_file(filepath).context("Error while deleting oldest file.")
-    } else {
+    let backup_count = previous_backups.len() + 1; // Includes the backup we just made.
+    if app_config.max_number_of_backups == 0 || backup_count < app_config.max_number_of_backups as usize {
         Ok(())
+    } else {
+        info!("Deleting the oldest backups as we've reached our max.");
+        let skip = app_config.max_number_of_backups.checked_sub(1).unwrap_or(0);
+        previous_backups
+            .iter()
+            .skip(skip as usize)
+            .try_for_each(|b| {
+                remove_dir_all(&b.path).context("Error while deleting older backup.")
+            })
     }
 }
 
@@ -60,7 +69,7 @@ fn has_nonempty_files(dir: &Path) -> Result<bool> {
     Ok(false)
 }
 
-fn get_oldest_backup(app_config: &AppConfig) -> Result<Option<PathBuf>> {
+fn get_previous_backups(app_config: &AppConfig) -> Result<BinaryHeap<DirEntryPriority>> {
     let dir = &app_config.destination_path;
     if !dir.is_dir() {
         bail!("Went to find the oldest file in the destination directory but was give a path to a file instead.");
@@ -71,12 +80,5 @@ fn get_oldest_backup(app_config: &AppConfig) -> Result<Option<PathBuf>> {
         heap.push(DirEntryPriority::new(entry?)?);
     }
 
-    if heap.len() < app_config.max_number_of_backups as usize {
-        Ok(None)
-    } else {
-        let oldest = heap
-            .pop()
-            .expect("Expected a PathBuf in the heap but found nothing.");
-        Ok(Some(oldest.path))
-    }
+    Ok(heap)
 }

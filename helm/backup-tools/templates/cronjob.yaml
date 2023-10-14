@@ -51,6 +51,14 @@ spec:
                 - name: RUST_LOG
                   value: "{{ .rustLog }}"
                 {{- end }}
+                {{- with .Values.env.config.incremental }}
+                - name: INCR_TIMEOUT
+                  value: "{{ .timeout }}"
+                {{- if .excludeFilePath }}
+                - name: INCR_EXCLUDE_FILE_PATH
+                  value: "{{ .excludeFilePath }}"
+                {{- end }}
+                {{- end }}
                 {{- if .Values.env.config.app.postgresBackupEnabled }}
                 {{- with .Values.env.config.postgres }}
                 {{- if or .url .urlSecret }}
@@ -103,14 +111,6 @@ spec:
                       key: {{ .passwordSecret.key }}
                   {{- end }}
                 {{- end }}
-                {{- end }}
-                {{- end }}
-                {{- with .Values.env.config.tar }}
-                - name: TAR_TIMEOUT
-                  value: "{{ .timeout }}"
-                {{- if .excludeFilePath }}
-                - name: TAR_EXCLUDE_FILE_PATH
-                  value: "{{ .excludeFilePath }}"
                 {{- end }}
                 {{- end }}
               livenessProbe:

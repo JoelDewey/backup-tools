@@ -54,6 +54,8 @@ fn execute_rsync(
         builder = builder.arg("--link-dest").arg(previous.as_os_str());
     }
 
+    // Adds an extra slash at the end of the source path, which indicates to rsync that
+    // it should copy the contents of the directory but not the directory itself.
     let mut final_source = PathBuf::from(source_path);
     final_source.push("");
 

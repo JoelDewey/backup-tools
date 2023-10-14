@@ -2,8 +2,17 @@
 name = "backup-tools"
 version = "0.1.0"
 edition = "2021"
+authors = ["Joel Dewey"]
+description = "A Rust application to coordinate backups of applications hosted in my home Kubernetes cluster."
+license = "GPL-3.0-only"
+repository = "https://github.com/JoelDewey/backup-tools"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata.release]
+sign-commit = true
+sign-tag = true
 
 [dependencies]
 anyhow = { version = "1.0.75", features = ["backtrace"] }

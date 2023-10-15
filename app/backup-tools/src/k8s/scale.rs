@@ -1,7 +1,7 @@
 use std::fs::read_to_string;
 use crate::k8s::{DefaultK8sClient, K8sClient, K8sConfig};
 use anyhow::{anyhow, Context, Result};
-use envy::{from_env, prefixed};
+use envy::prefixed;
 use std::thread::sleep;
 use std::time::Duration;
 use tracing::{error, info};

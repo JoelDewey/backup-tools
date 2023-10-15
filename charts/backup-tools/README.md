@@ -1,6 +1,6 @@
 # backup-tools Helm Chart
 
-The accompanying Helm chart for the [backup-tools application](../app/backup-tools). 
+The accompanying Helm chart for the [backup-tools application](../../app/backup-tools). 
 
 This Helm chart will create:
 
@@ -67,7 +67,7 @@ Allows for setting any valid option for `securityContext`. Defaults:
 ### `env`
 
 Configures the environment variables passed to the application, which is the primary mode of configuration for the 
-application. Refer to the [`README.md` for the application](../app/backup-tools/README.md) for more information on 
+application. Refer to the [`README.md` for the application](../../app/backup-tools/README.md) for more information on 
 these configuration options.
 
 *Note:* `env.config.postgres` optionally allows one to specify a secret name and a key from that secret to retrieve 

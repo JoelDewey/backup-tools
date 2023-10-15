@@ -17,7 +17,7 @@ spec:
               {{- toYaml . | nindent 8 }}
             {{- end }}
           labels:
-              {{- include "backup-tools.selectorLabels" . | nindent 8 }}
+              {{- include "backup-tools.selectorLabels" . | nindent 12 }}
         spec:
             {{- with .Values.imagePullSecrets }}
           imagePullSecrets:

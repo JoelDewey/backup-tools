@@ -76,16 +76,20 @@ fn scale(namespace: &str, config: &K8sConfig, client: &impl K8sClient, target_re
 
     let delay = Duration::from_secs(1);
     let mut replica_count = -1;
-    for _ in 0..120 {
+    for i in 0..120 {
         replica_count =
             client.get_available_replicas(namespace, &config.service_deployment_name)?;
         if replica_count == target_replicas {
             return Ok(replica_count);
         } else {
-            info!(
-                "Replica count is at {}, waiting a second before checking again.",
-                &replica_count
-            );
+            if i % 5 == 0 {
+                info!(
+                    "Still waiting for replica count to reach target count of {} replica(s); replica count is at {} replica(s).",
+                    &target_replicas,
+                    &replica_count,
+                );
+            }
+
             sleep(delay);
         }
     }

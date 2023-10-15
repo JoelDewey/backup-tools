@@ -18,7 +18,7 @@ pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
         .ok_or_else(|| anyhow!("Failed to determine namespace."))?;
 
     let replica_count = k8s_client
-        .get_replica_count(
+        .get_available_replicas(
             &service_namespace,
             &k8s_config.service_deployment_name,
         )
@@ -59,7 +59,7 @@ fn scale_up(namespace: &str, config: &K8sConfig, client: &impl K8sClient, target
 
 fn scale(namespace: &str, config: &K8sConfig, client: &impl K8sClient, target_replicas: i32) -> Result<i32> {
     let prev_replicas =
-        client.get_replica_count(namespace, &config.service_deployment_name)?;
+        client.get_available_replicas(namespace, &config.service_deployment_name)?;
     if prev_replicas == target_replicas {
         return Ok(prev_replicas);
     }
@@ -77,7 +77,7 @@ fn scale(namespace: &str, config: &K8sConfig, client: &impl K8sClient, target_re
     let mut replica_count = -1;
     for _ in 0..120 {
         replica_count =
-            client.get_replica_count(namespace, &config.service_deployment_name)?;
+            client.get_available_replicas(namespace, &config.service_deployment_name)?;
         if replica_count == target_replicas {
             return Ok(replica_count);
         } else {

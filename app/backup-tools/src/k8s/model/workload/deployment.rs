@@ -20,6 +20,6 @@ pub struct DeploymentSpec {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeploymentStatus {
-    pub replicas: i32,
-    pub available_replicas: i32,
+    pub replicas: Option<i32>,
+    pub available_replicas: Option<i32>,
 }

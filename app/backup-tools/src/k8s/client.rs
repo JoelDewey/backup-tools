@@ -7,7 +7,7 @@ use ureq::{Error, MiddlewareNext, Request, Response};
 use url::Url;
 
 pub trait K8sClient {
-    fn get_replica_count(&self, namespace: &str, name: &str) -> Result<i32>;
+    fn get_available_replicas(&self, namespace: &str, name: &str) -> Result<i32>;
 
     fn scale(&self, namespace: &str, name: &str, count: i32) -> Result<()>;
 }
@@ -105,7 +105,7 @@ impl DefaultK8sClient {
 }
 
 impl K8sClient for DefaultK8sClient {
-    fn get_replica_count(&self, namespace: &str, name: &str) -> Result<i32> {
+    fn get_available_replicas(&self, namespace: &str, name: &str) -> Result<i32> {
         let path = format!(
             "/apis/apps/v1/namespaces/{}/deployments/{}",
             namespace, name
@@ -122,8 +122,8 @@ impl K8sClient for DefaultK8sClient {
 
         response
             .status
-            .map(|status| status.replicas)
-            .ok_or_else(|| anyhow!("Failed to retrieve the replica count from the response body."))
+            .ok_or_else(|| anyhow!("Failed to retrieve Deployment status."))
+            .map(|r| r.available_replicas.unwrap_or(0))
     }
 
     fn scale(&self, namespace: &str, name: &str, count: i32) -> Result<()> {

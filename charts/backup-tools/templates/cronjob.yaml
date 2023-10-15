@@ -153,7 +153,7 @@ spec:
                 {{- with .Values.volume }}
                 {{- range .sources }}
                 - name: {{ .name }}
-                  mountPath: {{ .mountpath }}
+                  mountPath: {{ .mountPath }}
                 {{- end }}
               {{- end }}
               resources:

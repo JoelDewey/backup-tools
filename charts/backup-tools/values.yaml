@@ -53,7 +53,7 @@ env:
       destinationPath: "/destination"
       maxNumberOfBackups: 5
       scaleDeploymentEnabled: true
-      postgresBackupEnabled: true
+      postgresBackupEnabled: false
       rustBacktrace: 1
       rustLog: "info"
     incremental:
@@ -66,20 +66,20 @@ env:
       namespaceFile: "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
       serviceDeploymentName: ""
     postgres:
-      host: "localhost"
+      host: ""
       hostSecret: {}
   #     name: ""
   #     key: ""
       port: ""
-      databaseName: "postgres"
+      databaseName: ""
       databaseNameSecret: {}
   #     name: ""
   #     key: ""
-      username: "postgres"
+      username: ""
       usernameSecret: {}
   #     name: ""
   #     key: ""
-      password: "postgres"
+      password: ""
       passwordSecret: {}
   #     name: ""
   #     key: ""

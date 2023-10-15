@@ -91,6 +91,7 @@ spec:
                       key: {{ .urlSecret.key }}
                   {{- end }}
                 {{- else }}
+                {{- if or .host .hostSecret }}
                 - name: POSTGRES_HOST
                   {{- if .host }}
                   value: {{ .host }}
@@ -100,8 +101,10 @@ spec:
                       name: {{ .hostSecret.name }}
                       key: {{ .hostSecret.key }}
                   {{- end }}
+                {{- end }}
                 - name: POSTGRES_PORT
-                  value: {{ .port | default "5432" }}
+                  value: "{{ .port | default "5432" }}"
+                {{- if or .databaseName .databaseNameSecret }}
                 - name: POSTGRES_DATABASE_NAME
                   {{- if .databaseName }}
                   value: {{ .databaseName }}
@@ -111,6 +114,8 @@ spec:
                       name: {{ .databaseNameSecret.name }}
                       key: {{ .databaseNameSecret.key }}
                   {{- end }}
+                {{- end }}
+                {{- if or .username .usernameSecret }}
                 - name: POSTGRES_USERNAME
                   {{- if .username }}
                   value: {{ .username }}
@@ -120,6 +125,8 @@ spec:
                       name: {{ .usernameSecret.name }}
                       key: {{ .usernameSecret.key }}
                   {{- end }}
+                {{- end }}
+                {{- if or .password .passwordSecret }}
                 - name: POSTGRES_PASSWORD
                   {{- if .password }}
                   value: {{ .password }}
@@ -129,6 +136,7 @@ spec:
                       name: {{ .passwordSecret.name }}
                       key: {{ .passwordSecret.key }}
                   {{- end }}
+                {{- end }}
                 {{- end }}
                 {{- end }}
                 {{- end }}

@@ -28,7 +28,7 @@ jobs:
       - name: Setup chart-testing
         uses: helm/chart-testing-action@main
       - name: Run chart-testing (lint)
-        run: ct lint --since ${{  github.ref_name }}"
+        run: ct lint --since ${{  github.ref_name }}
 
   release:
     needs:

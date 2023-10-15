@@ -3,10 +3,11 @@ use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
 pub struct K8sConfig {
-    pub kube_token_path: PathBuf,
-    pub kube_cacrt_path: PathBuf,
-    pub kubernetes_service_host: String,
-    pub kubernetes_service_port_https: u16,
-    pub service_namespace: String,
+    pub token_path: PathBuf,
+    pub cacrt_path: PathBuf,
+    pub service_host: String,
+    pub service_port_https: u16,
+    pub service_namespace: Option<String>,
     pub service_deployment_name: String,
+    pub namespace_file_path: Option<PathBuf>,
 }

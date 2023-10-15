@@ -63,6 +63,7 @@ env:
       cacrtPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
       tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
       serviceNamespace: ""
+      namespaceFile: "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
       serviceDeploymentName: ""
     postgres:
       host: "localhost"

@@ -14,7 +14,7 @@ pub fn install(config: &K8sConfig) -> Result<RootCertStore> {
     }
 
     // Load k8s cert.
-    let path = &config.kube_cacrt_path;
+    let path = &config.cacrt_path;
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     let certs = rustls_pemfile::certs(&mut reader)?;

@@ -85,10 +85,10 @@ impl DefaultK8sClient {
     }
 
     fn get_url(config: &K8sConfig) -> Result<Url> {
-        let host_with_scheme = format!("https://{}", &config.kubernetes_service_host);
+        let host_with_scheme = format!("https://{}", &config.service_host);
         let mut result = Url::parse(&host_with_scheme)?;
         result
-            .set_port(Some(config.kubernetes_service_port_https))
+            .set_port(Some(config.service_port_https))
             .map_err(|_| {
                 anyhow!(format!(
                     "Failed to add port to Kubernetes service URL: {}",
@@ -100,7 +100,7 @@ impl DefaultK8sClient {
     }
 
     fn get_token(config: &K8sConfig) -> Result<String> {
-        std::fs::read_to_string(&config.kube_token_path).context("Failed to retrieve Kube token.")
+        std::fs::read_to_string(&config.token_path).context("Failed to retrieve Kube token.")
     }
 }
 

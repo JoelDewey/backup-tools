@@ -59,6 +59,24 @@ spec:
                   value: "{{ .excludeFilePath }}"
                 {{- end }}
                 {{- end }}
+                {{- if .Values.env.config.app.scaleDeploymentEnabled }}
+                {{- with .Values.env.config.k8s }}
+                - name: KUBERNETES_TOKEN_PATH
+                  value: "{{ .tokenPath }}"
+                - name: KUBERNETES_CACRT_PATH
+                  value: "{{ .cacrtPath }}"
+                {{- if .serviceNamespace }}
+                - name: KUBERNETES_SERVICE_NAMESPACE
+                  value: "{{ .serviceNamespace }}"
+                {{- end}}
+                - name: KUBERNETES_SERVICE_DEPLOYMENT_NAME
+                  value: "{{ .serviceDeploymentName }}"
+                {{- if .namespaceFile }}
+                - name: KUBERNETES_NAMESPACE_FILE_PATH
+                  value: "{{ .namespaceFile }}"
+                {{- end}}
+                {{- end }}
+                {{- end }}
                 {{- if .Values.env.config.app.postgresBackupEnabled }}
                 {{- with .Values.env.config.postgres }}
                 {{- if or .url .urlSecret }}

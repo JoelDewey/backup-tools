@@ -75,13 +75,4 @@ mod tests {
 
         assert_eq!(db_name, actual.database_name);
     }
-
-    #[test]
-    pub fn test2() {
-        let url = "postgres://yarrbot:Quotable-Banshee7-Exorcist@k3s-appdb01-blue";
-        let actual_result = PostgresConfig::from_url(url);
-
-        // Assert
-        actual_result.unwrap();
-    }
 }

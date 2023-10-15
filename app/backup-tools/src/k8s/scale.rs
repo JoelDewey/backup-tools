@@ -43,6 +43,7 @@ pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
         info!("Deployment replicas were set to 0 initially so no scale up is required.")
     } else {
         scale_up(&service_namespace, &k8s_config, &k8s_client, replica_count)
+            .map(|c| info!(replica_count=%c, "Scaled back up to the original replica count."))
             .context("Failed to scale up deployment after performing backups.")?;
     }
 

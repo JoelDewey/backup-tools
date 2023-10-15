@@ -22,7 +22,7 @@ RUN apk add --no-cache rsync postgresql-client tini \
     && mkdir /config \
     && chown backuptools:backuptools /config
 
-COPY --from=build --chown=backuptools:backuptools --chmod=550 /usr/src/myapp/target/release/backup-tools /opt/
+COPY --from=build --chown=backuptools:backuptools --chmod=555 /usr/src/myapp/target/release/backup-tools /opt/
 
 USER backuptools:backuptools
 

@@ -26,6 +26,7 @@ spec:
           serviceAccountName: {{ include "backup-tools.serviceAccountName" . }}
           securityContext:
               {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          restartPolicy: Never
           containers:
             - name: {{ .Chart.Name }}
               securityContext:
@@ -146,9 +147,9 @@ spec:
                     - ps -o comm | grep backup-tools
                 periodSeconds: 5
               volumeMounts:
-                - name: source
+                - name: backup-tools-source
                   mountPath: "{{ .Values.env.config.app.sourcePath }}"
-                - name: destination
+                - name: backup-tools-destination
                   mountPath: "{{ .Values.env.config.app.destinationPath }}"
                 {{- with .Values.volume }}
                 {{- range .sources }}

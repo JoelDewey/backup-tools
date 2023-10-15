@@ -94,7 +94,6 @@ volume:
   #   claimName: ""
   #   mountPath: ""
   destination:
-    name: ""
     claimName: "backup-tools-destination"
     createPvc: false
     annotations: {}

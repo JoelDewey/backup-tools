@@ -160,10 +160,10 @@ spec:
                   {{- toYaml .Values.resources | nindent 16 }}
             {{- with .Values.volume }}
           volumes:
-            - name: source
+            - name: backup-tools-source
               emptyDir:
                 sizeLimit: 100Mi
-            - name: destination
+            - name: backup-tools-destination
               persistentVolumeClaim:
                 claimName: {{ .destination.claimName }}
             {{- range .sources }}

@@ -16,7 +16,7 @@ codegen-units = 1
 [package.metadata.release]
 sign-commit = true
 sign-tag = true
-tag-name = "v{{version}}"
+tag-name = "app-v{{version}}"
 
 [dependencies]
 anyhow = { version = "1.0.75", features = ["backtrace"] }

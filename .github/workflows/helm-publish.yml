@@ -1,0 +1,37 @@
+name: "Publish Helm Charts"
+
+on:
+  push:
+    branches: [ "main" ]
+    # Publish semver tags as releases.
+    tags: [ 'helm-v*.*.*', 'helm-v*.*.*-alpha.*', 'helm-v*.*.*-beta.*', 'helm-v*.*.*-rc.*' ]
+    paths:
+      - "helm/backup-tools"
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Run chart-testing (lint)
+        uses: helm/chart-testing-action@master
+        with:
+          command: lint
+          config: .github/lint-chart.yaml
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@master
+        env:
+          CR_TOKEN: '${{ secrets.CR_TOKEN }}'

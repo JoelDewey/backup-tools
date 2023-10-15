@@ -1,4 +1,4 @@
-name: Docker
+name: "Publish Container Image"
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -11,7 +11,7 @@ on:
   push:
     branches: [ "main" ]
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*', 'v*.*.*-alpha.*', 'v*.*.*-beta.*', 'v*.*.*-rc.*' ]
+    tags: [ 'app-v*.*.*', 'app-v*.*.*-alpha.*', 'app-v*.*.*-beta.*', 'app-v*.*.*-rc.*' ]
   pull_request:
     branches: [ "main" ]
 

@@ -94,7 +94,18 @@ volume:
   #   claimName: ""
   #   mountPath: ""
   destination:
-    claimName: ""
+    name: ""
+    claimName: "backup-tools-destination"
+    createPvc: false
+    annotations: {}
+#      nfs.io/storage-path: "backup-data"
+    spec: {}
+#      storageClassName: backup-nfs-client
+#      accessModes:
+#        - ReadWriteOnce
+#      resources:
+#        requests:
+#          storage: 1Gi
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

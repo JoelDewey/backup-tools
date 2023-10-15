@@ -52,7 +52,7 @@ env:
       sourcePath: "/source"
       destinationPath: "/destination"
       maxNumberOfBackups: 5
-      scaleDeploymentEnabled: true,
+      scaleDeploymentEnabled: true
       postgresBackupEnabled: true
       rustBacktrace: 1
       rustLog: "info"

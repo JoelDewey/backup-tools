@@ -13,7 +13,7 @@ This Helm chart will create:
 
 By default, this Helm chart:
 
-* Targets the `latest` backup-tools container image.
+* Targets the `1.0.0` version of backup-tools.
 * Creates the `ServiceAccount` and `RoleBinding`.
 * Sets the cron job for a schedule of `10 3 * * 3`.
 * Drops all capabilities, sets a read-only root file system, runs as non-root, and runs as user and group `1029:1029`.

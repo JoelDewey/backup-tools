@@ -3,6 +3,16 @@ entries:
   backup-tools:
   - apiVersion: v2
     appVersion: latest
+    created: "2023-10-15T15:31:28.44329832Z"
+    description: Tools for backing up data in a Kubernetes cluster.
+    digest: 88bab88f50355137cba6ae71d8c80a4ca59f61c0571242ea6ac33aae3a4fd928
+    name: backup-tools
+    type: application
+    urls:
+    - backup-tools-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: latest
     created: "2023-10-15T14:49:48.98441483Z"
     description: Tools for backing up data in a Kubernetes cluster.
     digest: f720c88bebe2a32cec220b2c9f599604ec219c06f41e186538d9c9b6ba514918
@@ -21,4 +31,4 @@ entries:
     urls:
     - backup-tools-0.1.0.tgz
     version: 0.1.0
-generated: "2023-10-15T14:49:48.98442493Z"
+generated: "2023-10-15T15:31:28.44331092Z"

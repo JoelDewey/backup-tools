@@ -19,11 +19,16 @@ pub fn backup_postgres(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Re
     info!("Starting PostgreSQL backup.");
     info!("Loading PostgreSQL configuration variables.");
     let config = get_postgres_config()?;
+    let db_name = config
+        .database_name
+        .as_ref()
+        .map(|s| s as &str)
+        .unwrap_or_else(|| "db");
     let backup_path = app_config
         .source_path
         .clone()
         .join("db/postgres")
-        .join(&config.database_name);
+        .join(db_name);
     std::fs::create_dir_all(&backup_path)
         .context("Error while creating path to PostgreSQL backup.")?;
 
@@ -52,7 +57,7 @@ fn get_postgres_config() -> Result<PostgresConfig> {
 fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Popen> {
     let port = &config.port.unwrap_or(config::DEFAULT_PGSQL_PORT);
 
-    subprocess::Exec::cmd("pg_dump")
+    let mut process = subprocess::Exec::cmd("pg_dump")
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Pipe)
         .env("PGPASSWORD", &config.password)
@@ -61,9 +66,15 @@ fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Popen> {
         .arg("-p")
         .arg(&port.to_string())
         .arg("-U")
-        .arg(&config.username)
-        .arg("-d")
-        .arg(&config.database_name)
+        .arg(&config.username);
+
+    if let Some(db) = &config.database_name {
+        process = process
+            .arg("-d")
+            .arg(db);
+    }
+
+    process
         .arg("-w")
         .arg("--lock-wait-timeout=10")
         .arg("-F")

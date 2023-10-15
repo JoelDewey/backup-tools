@@ -14,7 +14,7 @@ impl DirEntryPriority {
     pub fn new(entry: DirEntry) -> Result<DirEntryPriority> {
         Ok(DirEntryPriority {
             path: entry.path(),
-            created: entry.metadata()?.created()?,
+            created: entry.metadata()?.modified()?,
         })
     }
 }

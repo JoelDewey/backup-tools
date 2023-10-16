@@ -106,6 +106,14 @@ volume:
 #        requests:
 #          storage: 1Gi
 
+extraVolumes: []
+#  - name: "my extra volume"
+#    specification:
+#      mountPath: "/config/rsync/excludes.txt"
+#      subPath: "excludes.txt"
+#    mountSpecification:
+#      configMap: my-cm
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little

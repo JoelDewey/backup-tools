@@ -164,7 +164,11 @@ spec:
                 - name: {{ .name }}
                   mountPath: {{ .mountPath }}
                 {{- end }}
-              {{- end }}
+                {{- end }}
+                {{- range .Values.extraVolumes }}
+                - name: "{{ .name }}"
+                  {{- .specification | toYaml | nindent 18 }}
+                {{- end }}
               resources:
                   {{- toYaml .Values.resources | nindent 16 }}
             {{- with .Values.volume }}
@@ -180,6 +184,10 @@ spec:
               persistentVolumeClaim:
                 claimName: {{ .claimName }}
             {{- end }}
+            {{- end }}
+            {{- range .Values.extraVolumes }}
+            - name: "{{ .name }}"
+              {{- .mountSpecification | toYaml | nindent 14 }}
             {{- end }}
             {{- with .Values.nodeSelector }}
           nodeSelector:

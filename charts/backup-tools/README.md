@@ -149,3 +149,14 @@ Configures the destination volume where backup-tools will save data copied from 
 
 *Note:* It is expected that backup-tools will have complete ownership over this volume; files may be deleted out of this 
 volume as a part of the backup rotation governed by `env.config.app.maxNumberOfBackups`.
+
+### `extraVolumes`
+
+An array of additional volumes to mount into the container. This is intended for including additional configuration 
+and other helpful files (e.g. excludes file for `rsync`) into the container.
+
+Each item must have the following properties:
+
+* `name`: The name to assign to the volume.
+* `mountPath`: The location within the container to mount the volume.
+* `claim`: The claim 

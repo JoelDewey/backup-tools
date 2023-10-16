@@ -35,19 +35,21 @@ pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
             .context("Failed to scale down deployment.")?;
     }
 
-    if let Err(e) = inner() {
-        error!(ex=%e, "Executing inner backup process failed! Attempting to scale deployment up anyway.");
+    let inner_result = inner();
+    if inner_result.is_err() {
+        error!("Executing inner backup process failed! Attempting to scale deployment up anyway.");
     }
 
     if replica_count == 0 {
         info!("Deployment replicas were set to 0 initially so no scale up is required.")
     } else {
-        scale_up(&service_namespace, &k8s_config, &k8s_client, replica_count)
-            .map(|c| info!(replica_count=%c, "Scaled back up to the original replica count."))
-            .context("Failed to scale up deployment after performing backups.")?;
+        match scale_up(&service_namespace, &k8s_config, &k8s_client, replica_count) {
+            Ok(c) => { info!(replica_count=%c, "Scaled back up to the original replica count.") }
+            Err(e) => { error!(ex=?e, "Failed to scale Deployment back to original replica count.") }
+        }
     }
 
-    Ok(())
+    inner_result
 }
 
 fn scale_down(namespace: &str, config: &K8sConfig, client: &impl K8sClient) -> Result<i32> {
@@ -105,7 +107,7 @@ fn get_namespace(config: &K8sConfig) -> Option<String> {
         read_to_string(&path)
             .map_or_else(
                 |e| {
-                    error!(ex=%e, "Failed to load namespace from namespace file.");
+                    error!(ex=?e, "Failed to load namespace from namespace file.");
                     None
                 },
                 |f| Some(f)

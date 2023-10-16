@@ -10,7 +10,7 @@ on:
     - cron: '27 17 * * *'
   push:
     # Publish semver tags as releases.
-    tags: [ 'app-v*.*.*', 'app-v*.*.*-alpha.*', 'app-v*.*.*-beta.*', 'app-v*.*.*-rc.*' ]
+    tags: [ 'v*.*.*', 'v*.*.*-alpha.*', 'v*.*.*-beta.*', 'v*.*.*-rc.*' ]
   pull_request:
     branches: [ "main" ]
 

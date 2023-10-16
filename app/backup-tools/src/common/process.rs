@@ -93,7 +93,7 @@ fn get_stream(stream: &Option<File>) -> String {
             match f.read_to_string(&mut output) {
                 Ok(_) => Some(output),
                 Err(e) => {
-                    error!(ex=%e, "Error while reading process stream.");
+                    error!(ex=?e, "Error while reading process stream.");
                     None
                 }
             }

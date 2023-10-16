@@ -41,12 +41,14 @@ fn execute_rsync(
     previous_backup: Option<&PathBuf>,
 ) -> Result<Popen> {
     let mut args = String::from("-azP");
+    let destination_owner = &config.destination_owner;
+    let destination_group = &config.destination_group;
 
-    if config.destination_owner.is_some() {
+    if destination_owner.is_some() {
         args.push('o');
     }
 
-    if config.destination_group.is_some() {
+    if destination_group.is_some() {
         args.push('g');
     }
 
@@ -56,13 +58,15 @@ fn execute_rsync(
         .arg(args)
         .arg("--delete");
 
-    if config.destination_owner.is_some() || config.destination_group.is_some() {
-        let owner = config
-            .destination_owner
-            .unwrap_or_else(|| String::from(""));
-        let group = config
-            .destination_group
-            .unwrap_or_else(|| String::from(""));
+    if destination_owner.is_some() || destination_group.is_some() {
+        let owner = destination_owner
+            .as_ref()
+            .map(|s| s as &str)
+            .unwrap_or_else(|| "");
+        let group = destination_group
+            .as_ref()
+            .map(|s| s as &str)
+            .unwrap_or_else(|| "");
         builder = builder
             .arg("--chown")
             .arg(format!("{}:{}", owner, group))

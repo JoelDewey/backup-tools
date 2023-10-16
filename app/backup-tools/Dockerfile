@@ -13,18 +13,11 @@ RUN apk add --no-cache musl-dev \
 FROM alpine:${ALPINE_VERSION}
 
 RUN apk add --no-cache rsync postgresql-client tini \
-    && addgroup --system backuptools \
-    && adduser --system --no-create-home backuptools -G backuptools \
     && mkdir /destination \
-    && chown backuptools:backuptools /destination \
     && mkdir /source \
-    && chown backuptools:backuptools /source \
-    && mkdir /config \
-    && chown backuptools:backuptools /config
+    && mkdir /config
 
-COPY --from=build --chown=backuptools:backuptools --chmod=555 /usr/src/myapp/target/release/backup-tools /opt/
-
-USER backuptools:backuptools
+COPY --from=build --chmod=555 /usr/src/myapp/target/release/backup-tools /opt/
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/opt/backup-tools"]

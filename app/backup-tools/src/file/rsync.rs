@@ -17,16 +17,16 @@ pub fn make_incremental_backup(
     shutdown_rx: &Receiver<()>,
 ) -> Result<()> {
     let destination_filepath = app_config.destination_path.clone().join(name);
-    let tar_config = envy::prefixed(INCREMENTAL_CONFIG_PREFIX)
+    let rsync_config = envy::prefixed(INCREMENTAL_CONFIG_PREFIX)
         .from_env::<RsyncConfig>()
         .context("Error while loading tar config.")?;
-    let timeout = tar_config.timeout.map_or_else(
+    let timeout = rsync_config.timeout.map_or_else(
         || Duration::from_secs(DEFAULT_TIMEOUT_SECS),
         |v| Duration::from_secs(v),
     );
 
     let process = execute_rsync(
-        &tar_config,
+        &rsync_config,
         &app_config.source_path,
         &destination_filepath,
         previous_backup,
@@ -40,11 +40,34 @@ fn execute_rsync(
     destination_filepath: &Path,
     previous_backup: Option<&PathBuf>,
 ) -> Result<Popen> {
+    let mut args = String::from("-azP");
+
+    if config.destination_owner.is_some() {
+        args.push('o');
+    }
+
+    if config.destination_group.is_some() {
+        args.push('g');
+    }
+
     let mut builder = subprocess::Exec::cmd("rsync")
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Pipe)
-        .arg("-azP")
+        .arg(args)
         .arg("--delete");
+
+    if config.destination_owner.is_some() || config.destination_group.is_some() {
+        let owner = config
+            .destination_owner
+            .unwrap_or_else(|| String::from(""));
+        let group = config
+            .destination_group
+            .unwrap_or_else(|| String::from(""));
+        builder = builder
+            .arg("--chown")
+            .arg(format!("{}:{}", owner, group))
+            .arg("--super");
+    }
 
     if let Some(excludes) = &config.exclude_file_path {
         builder = builder.arg("--exclude-from").arg(excludes.as_os_str());

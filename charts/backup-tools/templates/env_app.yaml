@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "backup-tools.fullname" . }}-app-env-vars"
+  labels:
+    {{- include "backup-tools.labels" . | nindent 4 }}
+data:
+  {{- with .Values.env.config.app }}
+  BACKUP_NAME: "{{ .backupName }}"
+  SOURCE_PATH: "{{ .sourcePath }}"
+  DESTINATION_PATH: "{{ .destinationPath }}"
+  MAX_NUMBER_OF_BACKUPS: "{{ .maxNumberOfBackups }}"
+  SCALE_DEPLOYMENT_ENABLED: "{{ .scaleDeploymentEnabled }}"
+  POSTGRES_BACKUP_ENABLED: "{{ .postgresBackupEnabled }}"
+  RUST_BACKTRACE: "{{ .rustBacktrace }}"
+  RUST_LOG: "{{ .rustLog }}"
+  {{- end }}

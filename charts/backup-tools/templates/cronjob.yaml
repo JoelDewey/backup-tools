@@ -33,51 +33,15 @@ spec:
                   {{- toYaml .Values.securityContext | nindent 16 }}
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
+              envFrom:
+                - configMapRef:
+                    name: "{{ include "backup-tools.fullname" . }}-app-env-vars"
+                - configMapRef:
+                    name: "{{ include "backup-tools.fullname" . }}-incr-env-vars"
+                - configMapRef:
+                    name: "{{ include "backup-tools.fullname" . }}-kubernetes-env-vars"
+                    optional: true
               env:
-                {{- with .Values.env.config.app }}
-                - name: BACKUP_NAME
-                  value: "{{ .backupName }}"
-                - name: SOURCE_PATH
-                  value: "{{ .sourcePath }}"
-                - name: DESTINATION_PATH
-                  value: "{{ .destinationPath }}"
-                - name: MAX_NUMBER_OF_BACKUPS
-                  value: "{{ .maxNumberOfBackups }}"
-                - name: SCALE_DEPLOYMENT_ENABLED
-                  value: "{{ .scaleDeploymentEnabled }}"
-                - name: POSTGRES_BACKUP_ENABLED
-                  value: "{{ .postgresBackupEnabled }}"
-                - name: RUST_BACKTRACE
-                  value: "{{ .rustBacktrace }}"
-                - name: RUST_LOG
-                  value: "{{ .rustLog }}"
-                {{- end }}
-                {{- with .Values.env.config.incremental }}
-                - name: INCR_TIMEOUT
-                  value: "{{ .timeout }}"
-                {{- if .excludeFilePath }}
-                - name: INCR_EXCLUDE_FILE_PATH
-                  value: "{{ .excludeFilePath }}"
-                {{- end }}
-                {{- end }}
-                {{- if .Values.env.config.app.scaleDeploymentEnabled }}
-                {{- with .Values.env.config.k8s }}
-                - name: KUBERNETES_TOKEN_PATH
-                  value: "{{ .tokenPath }}"
-                - name: KUBERNETES_CACRT_PATH
-                  value: "{{ .cacrtPath }}"
-                {{- if .serviceNamespace }}
-                - name: KUBERNETES_SERVICE_NAMESPACE
-                  value: "{{ .serviceNamespace }}"
-                {{- end}}
-                - name: KUBERNETES_SERVICE_DEPLOYMENT_NAME
-                  value: "{{ .serviceDeploymentName }}"
-                {{- if .namespaceFile }}
-                - name: KUBERNETES_NAMESPACE_FILE_PATH
-                  value: "{{ .namespaceFile }}"
-                {{- end}}
-                {{- end }}
-                {{- end }}
                 {{- if .Values.env.config.app.postgresBackupEnabled }}
                 {{- with .Values.env.config.postgres }}
                 {{- if or .url .urlSecret }}

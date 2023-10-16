@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "backup-tools.fullname" . }}-incr-env-vars"
+  labels:
+    {{- include "backup-tools.labels" . | nindent 4 }}
+data:
+  {{- with .Values.env.config.incremental }}
+  INCR_TIMEOUT: "{{ .timeout }}"
+
+  {{- if .excludeFilePath }}
+  INCR_EXCLUDE_FILE_PATH: "{{ .excludeFilePath }}"
+  {{- end }}
+
+  {{- if .destinationOwner }}
+  INCR_DESTINATION_OWNER: "{{ .destinationOwner }}"
+  {{- end }}
+
+  {{- if .destinationGroup }}
+  INCR_DESTINATION_GROUP: "{{ .destinationGroup }}"
+  {{- end }}
+
+  {{- end }}

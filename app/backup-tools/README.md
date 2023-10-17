@@ -109,3 +109,7 @@ These options are used to configure `rsync` while making an incremental file bac
   five minutes.
 * `INCR_EXCLUDE_FILE_PATH`: The path to a file with patterns of files for `rsync` to exclude. Please refer to the 
   `rsync` `man` pages for details on the `--exclude-from=` option, which is what this variable configures. 
+* `INCR_DESTINATION_OWNER`: The owner ID/name to use for the backup; passed directly as `rsync --chown=owner:group`. Requires 
+  root access in the container.
+* `INCR_DESTINATION_GROUP`: The group ID/name to use for the backup; passed directly as `rsync --chown=owner:group`. Requires
+  root access in the container.

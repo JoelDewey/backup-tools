@@ -92,8 +92,10 @@ env:
       rustBacktrace: 1
       rustLog: "info"
     incremental:
-      timeout: 300 # seconds == 5 minutes
+      destinationOwner: ""
+      destinationGroup: ""
       excludeFilePath: ""
+      timeout: 300 # seconds == 5 minutes
     k8s:
       cacrtPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
       tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"

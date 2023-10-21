@@ -113,3 +113,4 @@ These options are used to configure `rsync` while making an incremental file bac
   root access in the container.
 * `INCR_DESTINATION_GROUP`: The group ID/name to use for the backup; passed directly as `rsync --chown=owner:group`. Requires
   root access in the container.
+* `INCR_WHOLE_FILE`: Disables the `rsync` delta-transfer algorithm.

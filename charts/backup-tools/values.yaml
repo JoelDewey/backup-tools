@@ -61,6 +61,7 @@ env:
       destinationGroup: ""
       excludeFilePath: ""
       timeout: 300 # seconds == 5 minutes
+      wholeFile: false
     k8s:
       cacrtPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
       tokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"

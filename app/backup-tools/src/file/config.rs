@@ -7,4 +7,5 @@ pub struct RsyncConfig {
     pub exclude_file_path: Option<PathBuf>,
     pub destination_owner: Option<String>,
     pub destination_group: Option<String>,
+    pub whole_file: Option<bool>,
 }

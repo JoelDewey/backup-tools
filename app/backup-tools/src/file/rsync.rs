@@ -73,6 +73,12 @@ fn execute_rsync(
             .arg("--super");
     }
 
+    if let Some(whole_file) = &config.whole_file {
+        if *whole_file {
+            builder = builder.arg("--whole-file");
+        }
+    }
+
     if let Some(excludes) = &config.exclude_file_path {
         builder = builder.arg("--exclude-from").arg(excludes.as_os_str());
     }

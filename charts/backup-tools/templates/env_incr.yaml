@@ -20,8 +20,8 @@ data:
   INCR_DESTINATION_GROUP: "{{ .destinationGroup }}"
   {{- end }}
 
-  { { - if .wholeFile } }
+  {{- if .wholeFile }}
   INCR_WHOLE_FILE: "true"
-  { { - end } }
+  {{- end }}
 
   {{- end }}

@@ -1,13 +1,13 @@
-use std::path::Path;
-use std::time::Duration;
-use anyhow::Context;
 use crate::app_config::AppConfig;
-use crate::file::tar::config::TarConfig;
-use anyhow::Result;
-use crossbeam::channel::Receiver;
-use subprocess::{Popen, Redirection};
 use crate::common::process::wait_for_subprocess;
 use crate::file::backup_client::BackupClient;
+use crate::file::tar::config::TarConfig;
+use anyhow::Context;
+use anyhow::Result;
+use crossbeam::channel::Receiver;
+use std::path::Path;
+use std::time::Duration;
+use subprocess::{Popen, Redirection};
 
 pub const COMPRESSED_CONFIG_PREFIX: &str = "COMPRESSED_";
 pub const DEFAULT_TIMEOUT_SECS: u64 = 60 * 60; // 60 minutes
@@ -25,13 +25,10 @@ impl<'a> TarBackupClient<'a> {
 
         Ok(TarBackupClient {
             app_config,
-            tar_config
+            tar_config,
         })
     }
-    fn execute_tar(
-        &self,
-        destination_filepath: &Path
-    ) -> Result<Popen> {
+    fn execute_tar(&self, destination_filepath: &Path) -> Result<Popen> {
         let mut builder = subprocess::Exec::cmd("tar")
             .stdout(Redirection::Pipe)
             .stderr(Redirection::Pipe)
@@ -49,12 +46,12 @@ impl<'a> TarBackupClient<'a> {
             .popen()
             .context("Error while starting tar process and returning Popen.")
     }
-
 }
 
 impl<'a> BackupClient for TarBackupClient<'a> {
     fn run_backup(&self, filename: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
-        let destination_filepath = self.app_config.destination_path.clone().join(filename);
+        let mut destination_filepath = self.app_config.destination_path.clone().join(filename);
+        destination_filepath.set_extension("tar.gz");
         let timeout = self.tar_config.timeout.map_or_else(
             || Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             |v| Duration::from_secs(v),

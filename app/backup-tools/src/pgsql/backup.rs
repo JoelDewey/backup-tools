@@ -69,9 +69,7 @@ fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Popen> {
         .arg(&config.username);
 
     if let Some(db) = &config.database_name {
-        process = process
-            .arg("-d")
-            .arg(db);
+        process = process.arg("-d").arg(db);
     }
 
     process

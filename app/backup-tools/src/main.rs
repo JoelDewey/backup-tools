@@ -2,7 +2,7 @@ use crate::app_config::AppConfig;
 use crate::file::backup_files;
 use crate::pgsql::backup::backup_postgres;
 use anyhow::Result;
-use crossbeam::channel::{Receiver, unbounded};
+use crossbeam::channel::{unbounded, Receiver};
 use envy::from_env;
 use tracing::info;
 

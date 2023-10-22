@@ -1,12 +1,12 @@
-use std::path::{Path, PathBuf};
-use std::time::Duration;
-use crossbeam::channel::Receiver;
-use anyhow::{Context, Result};
-use subprocess::{Popen, Redirection};
 use crate::app_config::AppConfig;
 use crate::common::process::wait_for_subprocess;
 use crate::file::backup_client::BackupClient;
 use crate::file::rsync::config::RsyncConfig;
+use anyhow::{Context, Result};
+use crossbeam::channel::Receiver;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use subprocess::{Popen, Redirection};
 
 pub const INCREMENTAL_CONFIG_PREFIX: &str = "INCR_";
 pub const DEFAULT_TIMEOUT_SECS: u64 = 60 * 5; // 5 minutes
@@ -18,7 +18,10 @@ pub struct RsyncBackupClient<'a> {
 }
 
 impl<'a> RsyncBackupClient<'a> {
-    pub fn new(app_config: &'a AppConfig, previous_backup: Option<&Path>) -> Result<RsyncBackupClient<'a>> {
+    pub fn new(
+        app_config: &'a AppConfig,
+        previous_backup: Option<&Path>,
+    ) -> Result<RsyncBackupClient<'a>> {
         let rsync_config = envy::prefixed(INCREMENTAL_CONFIG_PREFIX)
             .from_env::<RsyncConfig>()
             .context("Error while loading rsync config.")?;
@@ -26,14 +29,11 @@ impl<'a> RsyncBackupClient<'a> {
         Ok(RsyncBackupClient {
             app_config,
             rsync_config,
-            previous_backup: previous_backup.map(|f| PathBuf::from(f))
+            previous_backup: previous_backup.map(|f| PathBuf::from(f)),
         })
     }
 
-    fn execute_rsync(
-        &self,
-        destination_filepath: &Path,
-    ) -> Result<Popen> {
+    fn execute_rsync(&self, destination_filepath: &Path) -> Result<Popen> {
         let mut args = String::from("-azP");
         let destination_owner = &self.rsync_config.destination_owner;
         let destination_group = &self.rsync_config.destination_group;
@@ -102,9 +102,7 @@ impl<'a> BackupClient for RsyncBackupClient<'a> {
             |v| Duration::from_secs(v),
         );
 
-        let process = self.execute_rsync(
-            &destination_filepath
-        )?;
+        let process = self.execute_rsync(&destination_filepath)?;
         wait_for_subprocess(process, Some(timeout), shutdown_rx)
     }
 }

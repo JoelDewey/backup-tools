@@ -1,5 +1,8 @@
 use crate::app_config::AppConfig;
+use crate::common::BackupType;
+use crate::file::backup_client::BackupClient;
 use crate::file::dir_entry_priority::DirEntryPriority;
+use crate::file::{rsync, tar};
 use anyhow::{bail, Context, Result};
 use chrono::{DateTime, Utc};
 use crossbeam::channel::Receiver;
@@ -8,9 +11,6 @@ use std::fs;
 use std::fs::remove_dir_all;
 use std::path::{Path, PathBuf};
 use tracing::{info, warn};
-use crate::common::BackupType;
-use crate::file::backup_client::BackupClient;
-use crate::file::{rsync, tar};
 
 pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
     info!("Beginning file backup.");
@@ -31,11 +31,12 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
     let previous_backups = get_previous_backups(app_config)?;
 
     let latest = previous_backups.peek().map(|e| e.path.as_path());
-    let client = get_backup_client(app_config, latest)
-        .context("Failed to create backup client.")?;
+    let client =
+        get_backup_client(app_config, latest).context("Failed to create backup client.")?;
 
     info!(filename=%filename.display(), "Creating backup.");
-    client.run_backup(&filename, shutdown_rx)
+    client
+        .run_backup(&filename, shutdown_rx)
         .context("Error while making backup.")?;
 
     let backup_count = previous_backups.len() + 1; // Includes the backup we just made.
@@ -60,7 +61,7 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
                     })
             })
             .and_then(|r| {
-                info!(total_deletes=count, "Finished deleting oldest backups.");
+                info!(total_deletes = count, "Finished deleting oldest backups.");
                 Ok(r)
             })
     }
@@ -101,10 +102,19 @@ fn get_previous_backups(app_config: &AppConfig) -> Result<BinaryHeap<DirEntryPri
     Ok(heap)
 }
 
-fn get_backup_client<'a>(app_config: &'a AppConfig, previous_backup: Option<&Path>) -> Result<Box<dyn BackupClient + 'a>> {
-    let result: Box<dyn BackupClient + 'a> = match app_config.backup_type.as_ref().unwrap_or(&BackupType::Incremental) {
-        BackupType::Compressed => { Box::new(tar::TarBackupClient::new(app_config)?) }
-        BackupType::Incremental => { Box::new(rsync::RsyncBackupClient::new(app_config, previous_backup)?) }
+fn get_backup_client<'a>(
+    app_config: &'a AppConfig,
+    previous_backup: Option<&Path>,
+) -> Result<Box<dyn BackupClient + 'a>> {
+    let result: Box<dyn BackupClient + 'a> = match app_config
+        .backup_type
+        .as_ref()
+        .unwrap_or(&BackupType::Incremental)
+    {
+        BackupType::Compressed => Box::new(tar::TarBackupClient::new(app_config)?),
+        BackupType::Incremental => {
+            Box::new(rsync::RsyncBackupClient::new(app_config, previous_backup)?)
+        }
     };
 
     Ok(result)

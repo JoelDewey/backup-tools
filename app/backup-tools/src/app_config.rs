@@ -1,6 +1,6 @@
+use crate::common::BackupType;
 use serde::Deserialize;
 use std::path::PathBuf;
-use crate::common::BackupType;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct AppConfig {

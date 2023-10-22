@@ -22,9 +22,7 @@ impl PostgresConfig {
         let mut database_name: Option<String> = None;
 
         if let Some(mut segments) = url.path_segments() {
-            database_name = segments
-                .next()
-                .and_then(|db| Option::from(db.to_string()));
+            database_name = segments.next().and_then(|db| Option::from(db.to_string()));
         }
 
         Ok(PostgresConfig {

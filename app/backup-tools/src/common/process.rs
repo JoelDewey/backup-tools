@@ -1,13 +1,10 @@
 use anyhow::{anyhow, bail, Result};
-use crossbeam::channel::{after, never, Receiver, Sender};
+use crossbeam::channel::{after, never, Receiver};
 use crossbeam::select;
-use std::fs::File;
-use std::io::Read;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
-use crossbeam::channel::internal::SelectHandle;
 use subprocess::{Communicator, ExitStatus, Popen};
-use tracing::{debug, error, info, trace, warn};
+use tracing::{error, info, trace, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
@@ -81,7 +78,7 @@ pub fn wait_for_subprocess(
     }
 }
 
-fn read_from_communicator(mut communicator: Communicator, time_limit: &Duration) -> JoinHandle<()> {
+fn read_from_communicator(communicator: Communicator, time_limit: &Duration) -> JoinHandle<()> {
     let cloned_time = time_limit.clone();
     std::thread::spawn(move || {
         let mut c = communicator;

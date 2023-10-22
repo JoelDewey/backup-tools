@@ -1,10 +1,10 @@
-use anyhow::{anyhow, bail, Result};
-use crossbeam::channel::{after, never, Receiver};
+use anyhow::{anyhow, bail, Context, Result};
+use crossbeam::channel::{after, bounded, never, Receiver};
 use crossbeam::select;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use subprocess::{Communicator, ExitStatus, Popen};
-use tracing::{error, info, trace, warn};
+use tracing::{debug, error, info, trace, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
@@ -16,7 +16,14 @@ pub fn wait_for_subprocess(
 ) -> Result<()> {
     let timeout = timeout.unwrap_or_else(|| Duration::from_secs(DEFAULT_TIMEOUT_SECS));
     let wait_duration = Duration::from_secs(WAIT_DURATION_SECS);
-    let handle = read_from_communicator(process.communicate_start(None), &wait_duration);
+    let (process_complete_tx, process_complete_rx) = bounded(1);
+    let handle = read_from_communicator(
+        process.communicate_start(None),
+        Duration::from_secs(1),
+        process_complete_rx,
+    )
+    .map_err(|e| error!(ex=?e, "Failed to start communicator thread."))
+    .ok();
     let duration = Some(wait_duration);
     let start = Instant::now();
 
@@ -24,7 +31,15 @@ pub fn wait_for_subprocess(
         let wait = duration.map(|d| after(d)).unwrap_or(never());
 
         select! {
-            recv(shutdown_rx) -> _ => process.terminate()?,
+            recv(shutdown_rx) -> _ => {
+                let _ = process_complete_tx
+                    .send_timeout((), Duration::from_secs(10))
+                    .is_err_and(|e| {
+                        error!(ex=?e, "Failed to communicate process shutdown to communicator thread.");
+                        true
+                    });
+                process.terminate()?;
+            },
             recv(wait) -> _ => {
                 if start.elapsed() <= timeout {
                     info!(
@@ -38,6 +53,12 @@ pub fn wait_for_subprocess(
                         timeout_seconds=timeout.as_secs(),
                         "Reached timeout while waiting for process completion, killing the process."
                     );
+                    let _ = process_complete_tx
+                        .send_timeout((), Duration::from_secs(10))
+                        .is_err_and(|e| {
+                            error!(ex=?e, "Failed to communicate process shutdown to communicator thread.");
+                            true
+                        });
                     process.kill()?;
                     bail!("Killed process due to timeout.");
                 }
@@ -45,7 +66,10 @@ pub fn wait_for_subprocess(
         }
     }
 
-    handle.join().expect("Couldn't join to the stdout/stderr thread.");
+    process_complete_tx.send_timeout((), Duration::from_secs(10))?;
+    if let Some(h) = handle {
+        h.join().expect("Couldn't join to the communicator thread.");
+    }
 
     let exit_status = process
         .exit_status()
@@ -78,36 +102,58 @@ pub fn wait_for_subprocess(
     }
 }
 
-fn read_from_communicator(communicator: Communicator, time_limit: &Duration) -> JoinHandle<()> {
-    let cloned_time = time_limit.clone();
-    std::thread::spawn(move || {
-        let mut c = communicator;
-        let t = cloned_time;
-        c = c.limit_time(t.clone());
+fn read_from_communicator(
+    communicator: Communicator,
+    time_limit: Duration,
+    process_complete: Receiver<()>,
+) -> Result<JoinHandle<()>> {
+    std::thread::Builder::new()
+        .name(String::from("Process Communicator"))
+        .spawn(move || {
+            let mut c = communicator;
+            let t = time_limit;
 
-        while let Ok(tuple) = c.read_string() {
-            let mut is_stdout_empty = false;
-            if let Some(stdout) = tuple.0 {
-                if stdout.is_empty() {
-                    trace!("Empty stdout.");
-                   is_stdout_empty = true;
+            loop {
+                let mut is_stdout_empty = false;
+                let mut is_stderr_empty = false;
+                c = c.limit_time(t.clone());
+
+                if let Ok(tuple) = c.read_string() {
+                    if let Some(stdout) = tuple.0 {
+                        if stdout.is_empty() {
+                            trace!("Empty stdout.");
+                            is_stdout_empty = true;
+                        } else {
+                            info!("Process stdout: {}", stdout);
+                        }
+                    } else {
+                        // stdout was not piped so it'll always be empty.
+                        is_stdout_empty = true;
+                    }
+
+                    if let Some(stderr) = tuple.1 {
+                        if stderr.is_empty() {
+                            trace!("Empty stderr.");
+                            is_stderr_empty = true;
+                        } else {
+                            error!("Process stderr: {}", stderr);
+                        }
+                    } else {
+                        // stderr was not piped, so it'll always be empty.
+                        is_stderr_empty = true;
+                    }
                 } else {
-                    info!("Process stdout: {}", stdout);
+                    // Assume that both streams were not piped.
+                    is_stdout_empty = true;
+                    is_stderr_empty = true;
                 }
-            }
 
-            if let Some(stderr) = tuple.1 {
-                if !stderr.is_empty() {
-                    error!("Process stderr: {}", stderr);
-                } else if is_stdout_empty {
-                    trace!("Empty stderr.");
+                if is_stdout_empty && is_stderr_empty && process_complete.is_full() {
                     break;
                 }
             }
 
-            c = c.limit_time(t.clone());
-        }
-
-        trace!("Loop ended.");
-    })
+            debug!("Loop ended.");
+        })
+        .context("Failed to start communicator thread.")
 }

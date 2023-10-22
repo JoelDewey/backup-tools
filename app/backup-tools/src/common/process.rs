@@ -1,11 +1,13 @@
 use anyhow::{anyhow, bail, Result};
-use crossbeam::channel::{after, never, Receiver};
+use crossbeam::channel::{after, never, Receiver, Sender};
 use crossbeam::select;
 use std::fs::File;
 use std::io::Read;
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
-use subprocess::{ExitStatus, Popen};
-use tracing::{error, info, warn};
+use crossbeam::channel::internal::SelectHandle;
+use subprocess::{Communicator, ExitStatus, Popen};
+use tracing::{debug, error, info, trace, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
@@ -16,7 +18,9 @@ pub fn wait_for_subprocess(
     shutdown_rx: &Receiver<()>,
 ) -> Result<()> {
     let timeout = timeout.unwrap_or_else(|| Duration::from_secs(DEFAULT_TIMEOUT_SECS));
-    let duration = Some(Duration::from_secs(WAIT_DURATION_SECS));
+    let wait_duration = Duration::from_secs(WAIT_DURATION_SECS);
+    let handle = read_from_communicator(process.communicate_start(None), &wait_duration);
+    let duration = Some(wait_duration);
     let start = Instant::now();
 
     while process.poll().is_none() {
@@ -44,15 +48,7 @@ pub fn wait_for_subprocess(
         }
     }
 
-    let p_output = get_stream(&process.stdout);
-    if !p_output.is_empty() {
-        info!("Process stdout: \r{}", p_output);
-    }
-
-    let p_err = get_stream(&process.stderr);
-    if !p_err.is_empty() {
-        error!("Process stderr: \r{}", p_err);
-    }
+    handle.join().expect("Couldn't join to the stdout/stderr thread.");
 
     let exit_status = process
         .exit_status()
@@ -85,18 +81,36 @@ pub fn wait_for_subprocess(
     }
 }
 
-fn get_stream(stream: &Option<File>) -> String {
-    stream
-        .as_ref()
-        .and_then(|mut f| {
-            let mut output = String::new();
-            match f.read_to_string(&mut output) {
-                Ok(_) => Some(output),
-                Err(e) => {
-                    error!(ex=?e, "Error while reading process stream.");
-                    None
+fn read_from_communicator(mut communicator: Communicator, time_limit: &Duration) -> JoinHandle<()> {
+    let cloned_time = time_limit.clone();
+    std::thread::spawn(move || {
+        let mut c = communicator;
+        let t = cloned_time;
+        c = c.limit_time(t.clone());
+
+        while let Ok(tuple) = c.read_string() {
+            let mut is_stdout_empty = false;
+            if let Some(stdout) = tuple.0 {
+                if stdout.is_empty() {
+                    trace!("Empty stdout.");
+                   is_stdout_empty = true;
+                } else {
+                    info!("Process stdout: {}", stdout);
                 }
             }
-        })
-        .unwrap_or_else(|| String::from("No stdout recorded."))
+
+            if let Some(stderr) = tuple.1 {
+                if !stderr.is_empty() {
+                    error!("Process stderr: {}", stderr);
+                } else if is_stdout_empty {
+                    trace!("Empty stderr.");
+                    break;
+                }
+            }
+
+            c = c.limit_time(t.clone());
+        }
+
+        trace!("Loop ended.");
+    })
 }

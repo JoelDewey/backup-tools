@@ -1,3 +1,4 @@
+{{- if eq .Values.env.config.app.backupType "INCREMENTAL" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,3 +26,4 @@ data:
   {{- end }}
 
   {{- end }}
+{{- end }}

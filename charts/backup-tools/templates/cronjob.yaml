@@ -36,8 +36,14 @@ spec:
               envFrom:
                 - configMapRef:
                     name: "{{ include "backup-tools.fullname" . }}-app-env-vars"
+                {{- if eq .Values.env.config.app.backupType "COMPRESSED" }}
+                - configMapRef:
+                    name: "{{ include "backup-tools.fullname" . }}-compressed-env-vars"
+                {{- end }}
+                {{- if eq .Values.env.config.app.backupType "INCREMENTAL" }}
                 - configMapRef:
                     name: "{{ include "backup-tools.fullname" . }}-incr-env-vars"
+                {{- end }}
                 - configMapRef:
                     name: "{{ include "backup-tools.fullname" . }}-kubernetes-env-vars"
                     optional: true

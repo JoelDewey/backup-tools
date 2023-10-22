@@ -9,10 +9,9 @@ backup tasks:
 4. It then scales up the aforementioned Kubernetes `Deployment` back to the original number of replicas, given 
    that it was scaled down in the first step.
 
-Backups are saved as a new directory with a directory name taking the format `YYYY-mm-DD_HHMMSS_BackupName`
-inside the target directory. These backups are creating using hard links to a previous backup if one exists to minimize 
-space utilization. Backups optionally may be deleted automatically once a maximum number of backups is reached; if configured,
-then after creating the latest backup the oldest backup is deleted.
+Backups are saved with directory or file name taking the format `YYYY-mm-DD_HHMMSS_BackupName`
+inside the target directory.  Backups optionally may be deleted automatically once a maximum number of backups is 
+reached; if configured, then after creating the latest backup the oldest backup is deleted.
 
 ## Prerequisites
 
@@ -20,6 +19,7 @@ backup-tools requires the following to be installed:
 
 * Rust 1.73 or greater.
 * `rsync`
+* `tar`
 * `pg_dump` (commonly in a `postgresl-client` package)
 
 It is designed to be run via a container in a Kubernetes cluster and expects that a bearer token and certificate for 
@@ -51,6 +51,8 @@ backup-tools supports various configuration options, provided as environment var
 * `MAX_NUMBER_OF_BACKUPS` (Required): The maximum number of backups to keep; if creating a new backup would exceed this 
   number of backups, then the oldest backup is deleted after creating the new backup. Set to `0` to disable deleting 
   older backups.
+* `BACKUP_TYPE`: Set to `INCREMENTAL` for an incremental backup using `rsync` or set to `COMPRESSED` for a full backup 
+  using `tar`. Defaults to `INCREMENTAL`.
 * `SCALE_DEPLOYMENT_ENABLED`: If set to `true`, will scale down a target `Deployment` prior to performing backups and 
   then will scale that `Deployment` back up once the backup is made. Set to `false` to disable scaling.
 * `POSTGRES_BACKUP_ENABLED`: If set to `true`, will execute `pg_dump` to backup a PostgreSQL database. Set to `false` to 
@@ -103,7 +105,8 @@ There are two ways to configure the PostgreSQL backup:
 
 ### Incremental File Backup Configuration
 
-These options are used to configure `rsync` while making an incremental file backup.
+These options are used to configure `rsync` while making an incremental file backup. These backups are creating using 
+hard links to a previous backup if one exists to minimize space utilization.
 
 * `INCR_TIMEOUT`: The amount of time, in seconds, to wait for `rsync` to complete before killing the process. Defaults 
   five minutes.
@@ -114,3 +117,12 @@ These options are used to configure `rsync` while making an incremental file bac
 * `INCR_DESTINATION_GROUP`: The group ID/name to use for the backup; passed directly as `rsync --chown=owner:group`. Requires
   root access in the container.
 * `INCR_WHOLE_FILE`: Disables the `rsync` delta-transfer algorithm.
+
+### Compressed File Backup Configuration
+
+These options are used to configure `tar` while making a full file backup.
+
+* `COMPRESSED_TIMEOUT`: The amount of time, in seconds, to wait for `tar` to complete before killing the process.
+  Defaults to one hour.
+* `COMPRESSED_EXCLUDE_FILE_PATH`: The path to a file with patterns of files for `tar` to exclude. Please refer to the
+  `tar` `man` pages for details on the `--exclude-from=` option, which is what this variable configures. 

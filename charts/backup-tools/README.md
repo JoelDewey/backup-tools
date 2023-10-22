@@ -5,7 +5,7 @@ The accompanying Helm chart for the [backup-tools application](../../app/backup-
 This Helm chart will create:
 
 * A `CronJob` invoking backup-tools at a configurable interval.
-* The `Role` providing access to the Kubernetes API for scaling a given `Deployment`.
+* A `Role` providing access to the Kubernetes API for scaling a given `Deployment`.
 * A `ServiceAccount`, which may be disabled in favor of making one's own.
 * A `RoleBinding` for the aforementioned `Role` and `ServiceAccount` (is not created if the `ServiceAccount` is not 
   created by this chart.)
@@ -13,13 +13,14 @@ This Helm chart will create:
 
 By default, this Helm chart:
 
-* Targets the `1.0.0` version of backup-tools.
+* Targets the latest version of backup-tools by its semver tag (not by `latest`).
 * Creates the `ServiceAccount` and `RoleBinding`.
 * Sets the cron job for a schedule of `10 3 * * 3`.
 * Drops all capabilities, sets a read-only root file system, runs as non-root, and runs as user and group `1029:1029`.
 * Copies a maximum of five backups from a `/source` `emptyDir` volume to a `/destination` volume to be configured by the 
   user.
 * Opts in to scaling the `Deployment` and making a backup of a PostgreSQL database.
+* Configures an incremental backup.
 
 
 ## Configuration
@@ -83,14 +84,18 @@ application can write to this directory as it will write the PostgreSQL backup h
 env:
   config:
     app:
+      backupType: "INCREMENTAL"
       backupName: "Backup"
       sourcePath: "/source"
       destinationPath: "/destination"
       maxNumberOfBackups: 5
       scaleDeploymentEnabled: true
-      postgresBackupEnabled: true
+      postgresBackupEnabled: false
       rustBacktrace: 1
       rustLog: "info"
+    compressed:
+      excludeFilePath: ""
+      timeout: 3600
     incremental:
       destinationOwner: ""
       destinationGroup: ""
@@ -104,23 +109,23 @@ env:
       namespaceFile: "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
       serviceDeploymentName: ""
     postgres:
-      host: "localhost"
+      host: ""
       hostSecret: {}
-  #     name: ""
-  #     key: ""
+      #     name: ""
+      #     key: ""
       port: ""
-      databaseName: "postgres"
+      databaseName: ""
       databaseNameSecret: {}
-  #     name: ""
-  #     key: ""
-      username: "postgres"
+      #     name: ""
+      #     key: ""
+      username: ""
       usernameSecret: {}
-  #     name: ""
-  #     key: ""
-      password: "postgres"
+      #     name: ""
+      #     key: ""
+      password: ""
       passwordSecret: {}
-  #     name: ""
-  #     key: ""
+      #     name: ""
+      #     key: ""
       url: "" # postgres://username:password@host:port
       urlSecret: {}
   #      name: ""
@@ -162,4 +167,4 @@ Each item must have the following properties:
 
 * `name`: The name to assign to the volume.
 * `mountPath`: The location within the container to mount the volume.
-* `claim`: The claim 
+* `claim`: The claim information for the volume.

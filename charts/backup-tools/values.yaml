@@ -48,6 +48,7 @@ securityContext:
 env:
   config:
     app:
+      backupType: "INCREMENTAL"
       backupName: "Backup"
       sourcePath: "/source"
       destinationPath: "/destination"
@@ -56,6 +57,9 @@ env:
       postgresBackupEnabled: false
       rustBacktrace: 1
       rustLog: "info"
+    compressed:
+      excludeFilePath: ""
+      timeout: 3600
     incremental:
       destinationOwner: ""
       destinationGroup: ""

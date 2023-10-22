@@ -12,7 +12,7 @@ RUN apk add --no-cache musl-dev \
 
 FROM alpine:${ALPINE_VERSION}
 
-RUN apk add --no-cache rsync postgresql-client tini \
+RUN apk add --no-cache rsync postgresql-client tini tar \
     && mkdir /destination \
     && mkdir /source \
     && mkdir /config

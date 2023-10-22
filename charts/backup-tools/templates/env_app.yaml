@@ -6,6 +6,7 @@ metadata:
     {{- include "backup-tools.labels" . | nindent 4 }}
 data:
   {{- with .Values.env.config.app }}
+  BACKUP_TYPE: "{{ .backupType }}"
   BACKUP_NAME: "{{ .backupName }}"
   SOURCE_PATH: "{{ .sourcePath }}"
   DESTINATION_PATH: "{{ .destinationPath }}"

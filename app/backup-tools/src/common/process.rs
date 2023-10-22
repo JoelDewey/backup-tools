@@ -4,7 +4,7 @@ use crossbeam::select;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use subprocess::{Communicator, ExitStatus, Popen};
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, error_span, info, info_span, trace, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
@@ -101,7 +101,12 @@ fn read_from_communicator(
                         if stdout.is_empty() {
                             trace!("Empty stdout.");
                         } else {
-                            info!("Process stdout: {}", stdout);
+                            let stdout_span = info_span!("stdout");
+                            let stdout_guard = stdout_span.enter();
+                            for line in stdout.lines() {
+                                info!(line);
+                            }
+                            drop(stdout_guard);
                         }
                     }
 
@@ -109,7 +114,12 @@ fn read_from_communicator(
                         if stderr.is_empty() {
                             trace!("Empty stderr.");
                         } else {
-                            error!("Process stderr: {}", stderr);
+                            let stderr_span = error_span!("stderr");
+                            let stderr_guard = stderr_span.enter();
+                            for line in stderr.lines() {
+                                error!(line);
+                            }
+                            drop(stderr_guard);
                         }
                     }
                 }

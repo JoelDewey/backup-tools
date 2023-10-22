@@ -4,11 +4,14 @@ use envy::prefixed;
 use std::fs::read_to_string;
 use std::thread::sleep;
 use std::time::Duration;
-use tracing::{error, info};
+use tracing::{error, info, trace_span};
 
 const K8S_PREFIX: &str = "KUBERNETES_";
 
 pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
+    let span = trace_span!("k8s");
+    let _ = span.enter();
+
     let k8s_config = prefixed(K8S_PREFIX).from_env::<K8sConfig>()?;
     let k8s_client = DefaultK8sClient::new(&k8s_config)?;
     let service_namespace = k8s_config

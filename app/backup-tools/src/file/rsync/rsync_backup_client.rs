@@ -7,6 +7,7 @@ use crossbeam::channel::Receiver;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use subprocess::{Popen, Redirection};
+use tracing::trace_span;
 
 pub const INCREMENTAL_CONFIG_PREFIX: &str = "INCR_";
 pub const DEFAULT_TIMEOUT_SECS: u64 = 60 * 5; // 5 minutes
@@ -102,6 +103,8 @@ impl<'a> BackupClient for RsyncBackupClient<'a> {
             |v| Duration::from_secs(v),
         );
 
+        let span = trace_span!("rsync");
+        let _ = span.enter();
         let process = self.execute_rsync(&destination_filepath)?;
         wait_for_subprocess(process, Some(timeout), shutdown_rx)
     }

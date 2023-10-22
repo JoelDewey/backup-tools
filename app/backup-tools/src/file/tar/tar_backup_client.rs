@@ -8,6 +8,7 @@ use crossbeam::channel::Receiver;
 use std::path::Path;
 use std::time::Duration;
 use subprocess::{Popen, Redirection};
+use tracing::trace_span;
 
 pub const COMPRESSED_CONFIG_PREFIX: &str = "COMPRESSED_";
 pub const DEFAULT_TIMEOUT_SECS: u64 = 60 * 60; // 60 minutes
@@ -57,6 +58,8 @@ impl<'a> BackupClient for TarBackupClient<'a> {
             |v| Duration::from_secs(v),
         );
 
+        let span = trace_span!("tar");
+        let _ = span.enter();
         let process = self.execute_tar(&destination_filepath)?;
         wait_for_subprocess(process, Some(timeout), shutdown_rx)
     }

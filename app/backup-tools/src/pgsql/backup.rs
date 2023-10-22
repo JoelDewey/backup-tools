@@ -8,9 +8,12 @@ use envy::prefixed;
 use std::env;
 use std::path::Path;
 use subprocess::{Popen, Redirection};
-use tracing::info;
+use tracing::{info, trace_span};
 
 pub fn backup_postgres(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
+    let span = trace_span!("pgsql");
+    let _ = span.enter();
+
     if app_config.postgres_backup_enabled.unwrap_or(false) == false {
         info!("PostgreSQL backup disabled.");
         return Ok(());

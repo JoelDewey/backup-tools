@@ -8,7 +8,7 @@ use tracing::{debug, error, info, trace, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
-const STREAM_WAIT_TIME_SECS: u64 = 60 * 60; // One hour
+const TIMEOUT_BUFFER: Duration = Duration::from_secs(5 * 60); // Five minutes
 
 pub fn wait_for_subprocess(
     mut process: Popen,
@@ -17,7 +17,10 @@ pub fn wait_for_subprocess(
 ) -> Result<()> {
     let timeout = timeout.unwrap_or_else(|| Duration::from_secs(DEFAULT_TIMEOUT_SECS));
     let wait_duration = Duration::from_secs(WAIT_DURATION_SECS);
-    let handle = read_from_communicator(process.communicate_start(None))
+    let handle = read_from_communicator(
+        process.communicate_start(None),
+        timeout.saturating_add(TIMEOUT_BUFFER)
+    )
         .map_err(|e| error!(ex=?e, "Failed to start communicator thread."))
         .ok();
     let duration = Some(wait_duration);
@@ -85,11 +88,12 @@ pub fn wait_for_subprocess(
 
 fn read_from_communicator(
     communicator: Communicator,
+    timeout: Duration
 ) -> Result<JoinHandle<()>> {
     std::thread::Builder::new()
         .name(String::from("Process Communicator"))
         .spawn(move || {
-            let mut c = communicator.limit_time(Duration::from_secs(STREAM_WAIT_TIME_SECS));
+            let mut c = communicator.limit_time(timeout);
 
             match c.read_string() {
                 Ok(tuple) => {

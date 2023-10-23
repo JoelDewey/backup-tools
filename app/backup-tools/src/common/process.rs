@@ -52,6 +52,7 @@ pub fn wait_for_subprocess(
     }
 
     if let Some(h) = handle {
+        info!("Waiting for additional stdout/stderr output for up to {:?}.", TIMEOUT_BUFFER);
         h.join().expect("Couldn't join to the communicator thread.");
     }
 
@@ -104,7 +105,7 @@ fn read_from_communicator(
                             let stdout_span = info_span!("stdout");
                             let stdout_guard = stdout_span.enter();
                             for line in stdout.lines() {
-                                info!(line);
+                                info!("{}", line);
                             }
                             drop(stdout_guard);
                         }
@@ -117,7 +118,7 @@ fn read_from_communicator(
                             let stderr_span = error_span!("stderr");
                             let stderr_guard = stderr_span.enter();
                             for line in stderr.lines() {
-                                error!(line);
+                                error!("{}", line);
                             }
                             drop(stderr_guard);
                         }

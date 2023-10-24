@@ -47,65 +47,89 @@ spec:
                 - configMapRef:
                     name: "{{ include "backup-tools.fullname" . }}-kubernetes-env-vars"
                     optional: true
+                - configMapRef:
+                    name: "{{ include "backup-tools.fullname" . }}-mongo-env-vars"
+                    optional: true
+                - configMapRef:
+                    name: "{{ include "backup-tools.fullname" . }}-postgres-env-vars"
+                    optional: true
               env:
-                {{- if .Values.env.config.app.postgresBackupEnabled }}
-                {{- with .Values.env.config.postgres }}
-                {{- if or .url .urlSecret }}
-                - name: POSTGRES_URL
-                  {{- if .url }}
-                  value: {{ .url }}
-                  {{- else }}
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ .urlSecret.name }}
-                      key: {{ .urlSecret.key }}
-                  {{- end }}
-                {{- else }}
-                {{- if or .host .hostSecret }}
-                - name: POSTGRES_HOST
-                  {{- if .host }}
-                  value: {{ .host }}
-                  {{- else }}
+                {{- if .Values.env.config.app.mongoBackupEnabled }}
+                {{- with .Values.env.config.mongo }}
+                {{- if .hostSecret }}
+                - name: MONGO_HOST
                   valueFrom:
                     secretKeyRef:
                       name: {{ .hostSecret.name }}
                       key: {{ .hostSecret.key }}
-                  {{- end }}
                 {{- end }}
-                - name: POSTGRES_PORT
-                  value: "{{ .port | default "5432" }}"
-                {{- if or .databaseName .databaseNameSecret }}
-                - name: POSTGRES_DATABASE_NAME
-                  {{- if .databaseName }}
-                  value: {{ .databaseName }}
-                  {{- else }}
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ .databaseNameSecret.name }}
-                      key: {{ .databaseNameSecret.key }}
-                  {{- end }}
-                {{- end }}
-                {{- if or .username .usernameSecret }}
-                - name: POSTGRES_USERNAME
-                  {{- if .username }}
-                  value: {{ .username }}
-                  {{- else }}
+                {{- if .usernameSecret }}
+                - name: MONGO_USERNAME
                   valueFrom:
                     secretKeyRef:
                       name: {{ .usernameSecret.name }}
                       key: {{ .usernameSecret.key }}
-                  {{- end }}
                 {{- end }}
-                {{- if or .password .passwordSecret }}
+                {{- if .databaseNameSecret }}
+                - name: MONGO_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .databaseNameSecret.name }}
+                      key: {{ .databaseNameSecret.key }}
+                {{- end }}
+                {{- if .authDatabaseNameSecret }}
+                - name: MONGO_AUTHENTICATION_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .authDatabaseNameSecret.name }}
+                      key: {{ .authDatabaseNameSecret.key }}
+                {{- end }}
+                {{- if .collectionSecret }}
+                - name: MONGO_COLLECTION
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .collectionSecret.name }}
+                      key: {{ .collectionSecret.key }}
+                {{- end }}
+                {{- end }}
+                {{- end}}
+
+                {{- if .Values.env.config.app.postgresBackupEnabled }}
+                {{- with .Values.env.config.postgres }}
+                {{- if .urlSecret }}
+                - name: POSTGRES_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .urlSecret.name }}
+                      key: {{ .urlSecret.key }}
+                {{- else }}
+                {{- if .hostSecret }}
+                - name: POSTGRES_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .hostSecret.name }}
+                      key: {{ .hostSecret.key }}
+                {{- end }}
+                {{- if .databaseNameSecret }}
+                - name: POSTGRES_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .databaseNameSecret.name }}
+                      key: {{ .databaseNameSecret.key }}
+                {{- end }}
+                {{- if .usernameSecret }}
+                - name: POSTGRES_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .usernameSecret.name }}
+                      key: {{ .usernameSecret.key }}
+                {{- end }}
+                {{- if .passwordSecret }}
                 - name: POSTGRES_PASSWORD
-                  {{- if .password }}
-                  value: {{ .password }}
-                  {{- else }}
                   valueFrom:
                     secretKeyRef:
                       name: {{ .passwordSecret.name }}
                       key: {{ .passwordSecret.key }}
-                  {{- end }}
                 {{- end }}
                 {{- end }}
                 {{- end }}

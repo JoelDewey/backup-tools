@@ -19,7 +19,8 @@ By default, this Helm chart:
 * Drops all capabilities, sets a read-only root file system, runs as non-root, and runs as user and group `1029:1029`.
 * Copies a maximum of five backups from a `/source` `emptyDir` volume to a `/destination` volume to be configured by the 
   user.
-* Opts in to scaling the `Deployment` and making a backup of a PostgreSQL database.
+* Opts in to scaling the `Deployment`.
+* Disables database backups.
 * Configures an incremental backup.
 
 
@@ -29,7 +30,7 @@ Configuration is performed by providing one's own `values.yaml` file for the fol
 
 ### `image`
 
-* `tag`: Override the tag from `latest`.
+* `tag`: Overrides the default tag set in the chart.
 
 ### `serviceAccount`
 
@@ -71,14 +72,15 @@ Configures the environment variables passed to the application, which is the pri
 application. Refer to the [`README.md` for the application](../../app/backup-tools/README.md) for more information on 
 these configuration options.
 
-*Note:* `env.config.postgres` optionally allows one to specify a secret name and a key from that secret to retrieve 
-those values.
+*Note:* Some values in `env.config.postgres` and `env.config.mongo` optionally allow one to specify a secret name and 
+a key within that secret to retrieve those values.
 
-*Note:* `env.config.k8s` and `env.config.postgres` may be left to their defaults if `env.config.app.scaleDeploymentEnabled` and 
-`env.config.app.postgresBackupEnabled` are respectively set to `false`.
+*Note:* `env.config.k8s`. `env.config.mongo`, and `env.config.postgres` may be left to their defaults if
+`env.config.app.scaleDeploymentEnabled`, `env.config.app.mongoBackupEnabled`, and `env.config.app.postgresBackupEnabled` 
+are respectively set to `false`.
 
 *Note:* `env.config.app.sourcePath` is mounted as an `emptyDir` volume into the container. It is expected that the 
-application can write to this directory as it will write the PostgreSQL backup here prior to any file backups.
+application can write to this directory as it will write the database backup(s) here prior to any file backups.
 
 ```yaml
 env:
@@ -91,6 +93,7 @@ env:
       maxNumberOfBackups: 5
       scaleDeploymentEnabled: true
       postgresBackupEnabled: false
+      mongoBackupEnabled: false
       rustBacktrace: 1
       rustLog: "info"
     compressed:
@@ -108,6 +111,31 @@ env:
       serviceNamespace: ""
       namespaceFile: "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
       serviceDeploymentName: ""
+    mongo:
+      host: ""
+      hostSecret: {}
+      #     name: ""
+      #     key: ""
+      port: ""
+      username: ""
+      usernameSecret: {}
+      #     name: ""
+      #     key: ""
+      configurationPath: "" # "/config/mongo/config.yaml"
+      databaseName: ""
+      databaseNameSecret: {}
+      #     name: ""
+      #     key: ""
+      authDatabaseName: ""
+      authDatabaseNameSecret: {}
+      #     name: ""
+      #     key: ""
+      authMechanism: ""
+      collection: ""
+      collectionSecret: {}
+      #     name: ""
+      #     key: ""
+      queryPath: "" # "/config/mongo/query.json"
     postgres:
       host: ""
       hostSecret: {}
@@ -128,8 +156,8 @@ env:
       #     key: ""
       url: "" # postgres://username:password@host:port
       urlSecret: {}
-  #      name: ""
-  #      key: ""
+      #      name: ""
+      #      key: ""
 ```
 
 ### `volume`

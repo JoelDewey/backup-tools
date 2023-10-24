@@ -4,7 +4,7 @@ This is the Rust-based application for backup-tools. It coordinates executing se
 backup tasks:
 
 1. First, it optionally scales down a Kubernetes `Deployment` to zero replicas.
-2. It then optionally executes `pg_dump` to create a backup of a database.
+2. It then optionally executes `pg_dump` and/or `mongodump` to create a backup of a database.
 3. It then performs a file copy, via `rsync`, from a source directory to a target directory.
 4. It then scales up the aforementioned Kubernetes `Deployment` back to the original number of replicas, given 
    that it was scaled down in the first step.
@@ -21,6 +21,7 @@ backup-tools requires the following to be installed:
 * `rsync`
 * `tar`
 * `pg_dump` (commonly in a `postgresl-client` package)
+* `mongodump` (commonly in a `mongodb-tools` package)
 
 It is designed to be run via a container in a Kubernetes cluster and expects that a bearer token and certificate for 
 working with a cluster's API to be present unless `SCALE_DEPLOYMENT_ENABLED` is set to false.
@@ -57,6 +58,8 @@ backup-tools supports various configuration options, provided as environment var
   then will scale that `Deployment` back up once the backup is made. Set to `false` to disable scaling.
 * `POSTGRES_BACKUP_ENABLED`: If set to `true`, will execute `pg_dump` to backup a PostgreSQL database. Set to `false` to 
   disable backing up a PostgreSQL database.
+* `MONGO_BACKUP_ENABLED`: If set to `true`, will execute `mongodump` to backup a MongoDB database. Set to `false` to 
+  disable backing up a MongoDB database.
 
 ### Kubernetes Configuration
 
@@ -78,6 +81,22 @@ These settings are only utilized when `SCALE_DEPLOYMENT_ENABLED` is set to `true
   from the `namespace` file mounted into the container by Kubernetes.
 * `KUBERNETES_NAMESPACE_FILE_PATH`: The path to the `namespace` file mounted into the container by Kubernetes. Only
   required when `KUBERNETES_SERVICE_NAMESPACE` is not set.
+
+### MongoDB Backup Configuration
+
+These configuration options modify how MongoDB backups, using `mongodump`, are performed. These options are only 
+utilized when `MONGO_BACKUP_ENABLED` is set to `true`.
+
+* `MONGO_HOST` (Required): Hostname for the MongoDB server.
+* `MONGO_USERNAME` (Required): Username to authenticate to the MongoDB server with.
+* `MONGO_CONFIGURATION_FILE` (Required): Path to a YAML configuration file for authenticating to the MongoDB server.
+* `MONGO_PORT`: Port for the MongoDB server; defaults to `27017`.
+* `MONGO_DATABASE_NAME`: Name of the database to backup.
+* `MONGO_AUTHENTICATION_DATABASE_NAME`: Name of the authentication database. Omitted from the argument list if not 
+  provided.
+* `MONGO_AUTHENTICATION_MECHANISM`: Authentication mechanism for authenticating with MongoDB.
+* `MONGO_COLLECTION`: The name of a specific collection to export.
+* `MONGO_QUERY_FILE`: A file path to a MongoDB JSON document for filtering the output.
 
 ### PostgreSQL Backup Configuration
 

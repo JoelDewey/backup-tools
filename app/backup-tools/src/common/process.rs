@@ -19,10 +19,10 @@ pub fn wait_for_subprocess(
     let wait_duration = Duration::from_secs(WAIT_DURATION_SECS);
     let handle = read_from_communicator(
         process.communicate_start(None),
-        timeout.saturating_add(TIMEOUT_BUFFER)
+        timeout.saturating_add(TIMEOUT_BUFFER),
     )
-        .map_err(|e| error!(ex=?e, "Failed to start communicator thread."))
-        .ok();
+    .map_err(|e| error!(ex=?e, "Failed to start communicator thread."))
+    .ok();
     let duration = Some(wait_duration);
     let start = Instant::now();
 
@@ -52,7 +52,10 @@ pub fn wait_for_subprocess(
     }
 
     if let Some(h) = handle {
-        info!("Waiting for additional stdout/stderr output for up to {:?}.", TIMEOUT_BUFFER);
+        info!(
+            "Waiting for additional stdout/stderr output for up to {:?}.",
+            TIMEOUT_BUFFER
+        );
         h.join().expect("Couldn't join to the communicator thread.");
     }
 
@@ -87,10 +90,7 @@ pub fn wait_for_subprocess(
     }
 }
 
-fn read_from_communicator(
-    communicator: Communicator,
-    timeout: Duration
-) -> Result<JoinHandle<()>> {
+fn read_from_communicator(communicator: Communicator, timeout: Duration) -> Result<JoinHandle<()>> {
     std::thread::Builder::new()
         .name(String::from("Process Communicator"))
         .spawn(move || {
@@ -124,7 +124,9 @@ fn read_from_communicator(
                         }
                     }
                 }
-                Err(e) => { error!(ex=?e, "Failed to read from stdout/stderr."); }
+                Err(e) => {
+                    error!(ex=?e, "Failed to read from stdout/stderr.");
+                }
             }
 
             debug!("Communicator ended.");

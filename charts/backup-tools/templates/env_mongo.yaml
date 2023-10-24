@@ -1,0 +1,45 @@
+{{- if .Values.env.config.app.mongoBackupEnabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "backup-tools.fullname" . }}-mongo-env-vars"
+  labels:
+    {{- include "backup-tools.labels" . | nindent 4 }}
+data:
+  {{- with .Values.env.config.mongo }}
+  MONGO_PORT: "{{ .port | default "27017" }}"
+
+  {{- if .host }}
+  MONGO_HOST: "{{ .host }}"
+  {{- end }}
+
+  {{- if .username }}
+  MONGO_USERNAME: "{{ .username }}"
+  {{- end }}
+
+  {{- if .configurationPath }}
+  MONGO_CONFIGURATION_FILE: "{{ .configurationPath }}"
+  {{- end }}
+
+  {{- if .databaseName }}
+  MONGO_DATABASE_NAME: "{{ .databaseName }}"
+  {{- end }}
+
+  {{- if .authDatabaseName }}
+  MONGO_AUTHENTICATION_DATABASE_NAME: "{{ .authDatabaseName }}"
+  {{- end }}
+
+  {{- if .authMechanism }}
+  MONGO_AUTHENTICATION_MECHANISM: "{{ .authMechanism }}"
+  {{- end }}
+
+  {{- if .collection }}
+  MONGO_COLLECTION: "{{ .collection }}"
+  {{- end }}
+
+  {{- if .queryPath }}
+  MONGO_QUERY_FILE: "{{ .queryPath }}"
+  {{- end }}
+
+  {{- end }}
+{{- end }}

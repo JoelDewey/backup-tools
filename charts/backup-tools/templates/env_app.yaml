@@ -13,6 +13,7 @@ data:
   MAX_NUMBER_OF_BACKUPS: "{{ .maxNumberOfBackups }}"
   SCALE_DEPLOYMENT_ENABLED: "{{ .scaleDeploymentEnabled }}"
   POSTGRES_BACKUP_ENABLED: "{{ .postgresBackupEnabled }}"
+  MONGO_BACKUP_ENABLED: "{{ .mongoBackupEnabled }}"
   RUST_BACKTRACE: "{{ .rustBacktrace }}"
   RUST_LOG: "{{ .rustLog }}"
   {{- end }}

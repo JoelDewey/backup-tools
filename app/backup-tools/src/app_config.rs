@@ -10,5 +10,6 @@ pub struct AppConfig {
     pub max_number_of_backups: u64,
     pub scale_deployment_enabled: Option<bool>,
     pub postgres_backup_enabled: Option<bool>,
+    pub mongo_backup_enabled: Option<bool>,
     pub backup_type: Option<BackupType>,
 }

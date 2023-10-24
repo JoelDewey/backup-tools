@@ -55,6 +55,7 @@ env:
       maxNumberOfBackups: 5
       scaleDeploymentEnabled: true
       postgresBackupEnabled: false
+      mongoBackupEnabled: false
       rustBacktrace: 1
       rustLog: "info"
     compressed:
@@ -72,6 +73,31 @@ env:
       serviceNamespace: ""
       namespaceFile: "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
       serviceDeploymentName: ""
+    mongo:
+      host: ""
+      hostSecret: {}
+  #     name: ""
+  #     key: ""
+      port: ""
+      username: ""
+      usernameSecret: {}
+  #     name: ""
+  #     key: ""
+      configurationPath: "" # "/config/mongo/config.yaml"
+      databaseName: ""
+      databaseNameSecret: {}
+  #     name: ""
+  #     key: ""
+      authDatabaseName: ""
+      authDatabaseNameSecret: {}
+  #     name: ""
+  #     key: ""
+      authMechanism: ""
+      collection: ""
+      collectionSecret: {}
+  #     name: ""
+  #     key: ""
+      queryPath: "" # "/config/mongo/query.json"
     postgres:
       host: ""
       hostSecret: {}

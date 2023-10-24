@@ -1,6 +1,6 @@
 use crate::app_config::AppConfig;
+use crate::db::backup_db;
 use crate::file::backup_files;
-use crate::pgsql::backup::backup_postgres;
 use anyhow::Result;
 use crossbeam::channel::{unbounded, Receiver};
 use envy::from_env;
@@ -8,9 +8,9 @@ use tracing::info;
 
 mod app_config;
 mod common;
+mod db;
 mod file;
 mod k8s;
-mod pgsql;
 
 fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -36,7 +36,7 @@ fn main() -> Result<()> {
 }
 
 fn run_backup(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
-    backup_postgres(&app_config, &shutdown_rx)?;
+    backup_db(&app_config, &shutdown_rx)?;
     backup_files(&app_config, &shutdown_rx)?;
 
     Ok(())

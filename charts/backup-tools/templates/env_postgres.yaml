@@ -1,0 +1,33 @@
+{{- if .Values.env.config.app.postgresBackupEnabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "backup-tools.fullname" . }}-postgres-env-vars"
+  labels:
+    {{- include "backup-tools.labels" . | nindent 4 }}
+data:
+  {{- with .Values.env.config.postgres }}
+  POSTGRES_PORT: "{{ .port | default "5432" }}"
+
+  {{- if .url }}
+  POSTGRES_URL: "{{ .url }}"
+  {{- end }}
+
+  {{- if .host }}
+  POSTGRES_HOST: "{{ .host }}"
+  {{- end }}
+
+  {{- if .databaseName }}
+  POSTGRES_DATABASE_NAME: "{{ .databaseName }}"
+  {{- end }}
+
+  {{- if .username }}
+  POSTGRES_USERNAME: "{{ .username }}"
+  {{- end }}
+
+  {{- if .password }}
+  POSTGRES_PASSWORD: "{{ .password }}"
+  {{- end }}
+
+  {{- end }}
+{{- end }}

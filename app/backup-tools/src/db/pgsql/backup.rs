@@ -7,7 +7,7 @@ use envy::prefixed;
 use std::env;
 use std::path::Path;
 use subprocess::{Popen, Redirection};
-use tracing::{info, trace_span};
+use tracing::{debug, info, trace_span};
 
 pub fn backup_postgres(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
     let span = trace_span!("pgsql");
@@ -64,13 +64,17 @@ fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Popen> {
         process = process.arg("-d").arg(db);
     }
 
-    process
+    process = process
         .arg("-w")
         .arg("--lock-wait-timeout=10")
         .arg("-F")
         .arg("d")
         .arg("-f")
-        .arg(save_path.as_os_str())
+        .arg(save_path.as_os_str());
+
+    debug!("Final pg_dump command: {}", &process.to_cmdline_lossy());
+
+    process
         .popen()
         .context("Error while starting pg_dump process and returning Popen.")
 }

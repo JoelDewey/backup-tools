@@ -6,7 +6,7 @@ use crossbeam::channel::Receiver;
 use envy::prefixed;
 use std::path::Path;
 use subprocess::{Popen, Redirection};
-use tracing::{info, trace_span};
+use tracing::{debug, info, trace_span};
 use url::Url;
 
 pub fn backup_mongo(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
@@ -70,8 +70,13 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
         process = process.arg("--queryFile").arg(query_file.as_os_str());
     }
 
+    process = process
+        .arg("--uri")
+        .arg(connection_string.as_str());
+
+    debug!("Final mongodump command: {}", &process.to_cmdline_lossy());
+
     process
-        .arg(connection_string.as_str())
         .popen()
         .context("Error while starting mongodump process.")
 }

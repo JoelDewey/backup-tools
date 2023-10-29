@@ -42,13 +42,13 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
     let mut process = subprocess::Exec::cmd("mongodump")
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Pipe)
+        .cwd(save_path)
         .arg("--config")
         .arg(config.configuration_file.as_os_str())
         .arg("--username")
         .arg(&config.username)
         .arg("--gzip")
-        .arg("--archive")
-        .arg(save_path.join("mongo.gz").as_os_str());
+        .arg("--archive=mongo.gz");
 
     if let Some(db) = &config.database_name {
         process = process.arg("--db").arg(db).arg("--dumpDbUsersAndRoles");

@@ -71,7 +71,6 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
     }
 
     process = process
-        .arg("--uri")
         .arg(connection_string.as_str());
 
     debug!("Final mongodump command: {}", &process.to_cmdline_lossy());

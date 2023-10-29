@@ -41,9 +41,15 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
     let connection_string = Url::parse(&format!("mongodb://{}:{}", &config.host, port))
         .context("Error encountered while creating MongoDB connection string.")?;
 
+    // mongodump writes its normal output to stderr as it can be configured to output the backup data to stdout.
+    // In backup-tools, mongodump is configured to write out backup data to the mongo.gz archive.
+    // Therefore, stderr will be merged to stdout so that the correct logging severity is chosen.
+    // Actual errors are reported via the status code per MongoDB's developers.
+    // https://jira.mongodb.org/browse/TOOLS-1484
+
     let mut process = subprocess::Exec::cmd("mongodump")
         .stdout(Redirection::Pipe)
-        .stderr(Redirection::Pipe)
+        .stderr(Redirection::Merge)
         .cwd(save_path)
         .arg("--config")
         .arg(config.configuration_file.as_os_str())

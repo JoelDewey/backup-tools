@@ -1,6 +1,6 @@
 [package]
 name = "backup-tools"
-version = "1.4.2"
+version = "1.4.3"
 edition = "2021"
 authors = ["Joel Dewey"]
 description = "A Rust application to coordinate backups of applications hosted in my home Kubernetes cluster."

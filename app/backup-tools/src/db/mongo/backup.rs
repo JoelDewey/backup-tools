@@ -7,6 +7,7 @@ use envy::prefixed;
 use std::path::Path;
 use subprocess::{Popen, Redirection};
 use tracing::{info, trace_span};
+use url::Url;
 
 pub fn backup_mongo(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
     let span = trace_span!("mongo");
@@ -35,14 +36,14 @@ fn get_mongo_config() -> Result<MongoConfig> {
 
 fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
     let port = &config.port.unwrap_or(config::DEFAULT_PORT);
+    let connection_string = Url::parse(&format!("mongodb://{}:{}", &config.host, port))
+        .context("Error encountered while creating MongoDB connection string.")?;
 
     let mut process = subprocess::Exec::cmd("mongodump")
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Pipe)
         .arg("--config")
         .arg(config.configuration_file.as_os_str())
-        .arg("--host")
-        .arg(format!("{}:{}", &config.host, port))
         .arg("--username")
         .arg(&config.username)
         .arg("--gzip")
@@ -70,6 +71,7 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
     }
 
     process
+        .arg(connection_string.as_str())
         .popen()
         .context("Error while starting mongodump process.")
 }

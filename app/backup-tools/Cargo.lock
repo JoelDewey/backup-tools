@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "backup-tools"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "anyhow",
  "chrono",

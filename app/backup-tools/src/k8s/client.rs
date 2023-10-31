@@ -15,12 +15,12 @@ pub trait K8sClient {
 fn logging_middleware(req: Request, next: MiddlewareNext) -> Result<Response, ureq::Error> {
     let method = String::from(req.method());
     let url = String::from(req.url());
-    tracing::info!("K8s Client Begin: {} {}", &method, &url);
+    tracing::debug!("K8s Client Begin: {} {}", &method, &url);
 
     let result = next.handle(req);
     result
         .map(|r| {
-            tracing::info!(
+            tracing::debug!(
                 "K8s Client End: {} {} - {} {}",
                 method,
                 r.get_url(),

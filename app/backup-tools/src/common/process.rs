@@ -27,7 +27,7 @@ pub fn wait_for_subprocess(
     let start = Instant::now();
 
     while process.poll().is_none() {
-        let wait = duration.map(|d| after(d)).unwrap_or(never());
+        let wait = duration.map(after).unwrap_or(never());
 
         select! {
             recv(shutdown_rx) -> _ => process.terminate()?,

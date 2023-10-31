@@ -54,11 +54,11 @@ mod test {
         fs::create_dir(&temp_dir).expect("Failed to create temporary file.");
 
         let older_path = temp_dir.join("00_cmp_givenolder_returnsgreater_older.txt");
-        File::create(&older_path).expect("Failed to create older file.");
+        File::create(older_path).expect("Failed to create older file.");
         sleep(Duration::from_secs(1));
 
         let newer_path = temp_dir.join("01_cmp_givenolder_returnsgreater_newer.txt");
-        File::create(&newer_path).expect("Failed to create newer file.");
+        File::create(newer_path).expect("Failed to create newer file.");
 
         let mut files = fs::read_dir(&temp_dir)
             .expect("Failed to read files out of temporary directory.")

@@ -36,8 +36,8 @@ fn main() -> Result<()> {
 }
 
 fn run_backup(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
-    backup_db(&app_config, &shutdown_rx)?;
-    backup_files(&app_config, &shutdown_rx)?;
+    backup_db(app_config, shutdown_rx)?;
+    backup_files(app_config, shutdown_rx)?;
 
     Ok(())
 }

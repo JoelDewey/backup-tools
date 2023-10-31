@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::path::PathBuf;
-use url;
+
 
 pub const POSTGRES_PREFIX: &str = "POSTGRES_";
 pub const POSTGRES_ENV_URL: &str = "POSTGRES_URL";
@@ -45,7 +45,7 @@ pub struct PgDumpArgs {
 
 #[cfg(test)]
 mod tests {
-    use crate::pgsql::config::PostgresConfig;
+    use crate::db::pgsql::config::PostgresConfig;
 
     #[test]
     pub fn from_url_given_url_creates() {
@@ -71,6 +71,7 @@ mod tests {
         assert!(actual.port.is_some());
         assert_eq!(port, actual.port.unwrap());
 
-        assert_eq!(db_name, actual.database_name);
+        assert!(actual.database_name.is_some());
+        assert_eq!(db_name, actual.database_name.unwrap());
     }
 }

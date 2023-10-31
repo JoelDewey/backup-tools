@@ -55,7 +55,7 @@ impl<'a> BackupClient for TarBackupClient<'a> {
         destination_filepath.set_extension("tar.gz");
         let timeout = self.tar_config.timeout.map_or_else(
             || Duration::from_secs(DEFAULT_TIMEOUT_SECS),
-            |v| Duration::from_secs(v),
+            Duration::from_secs,
         );
 
         let span = trace_span!("tar");

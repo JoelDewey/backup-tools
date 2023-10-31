@@ -56,7 +56,7 @@ fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Popen> {
         .arg("-h")
         .arg(&config.host)
         .arg("-p")
-        .arg(&port.to_string())
+        .arg(port.to_string())
         .arg("-U")
         .arg(&config.username);
 

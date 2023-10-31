@@ -114,12 +114,12 @@ fn scale(
 
 fn get_namespace(config: &K8sConfig) -> Option<String> {
     if let Some(path) = &config.namespace_file_path {
-        read_to_string(&path).map_or_else(
+        read_to_string(path).map_or_else(
             |e| {
                 error!(ex=?e, "Failed to load namespace from namespace file.");
                 None
             },
-            |f| Some(f),
+            Some,
         )
     } else {
         None

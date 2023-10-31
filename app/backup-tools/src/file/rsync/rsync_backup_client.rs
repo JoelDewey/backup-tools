@@ -30,7 +30,7 @@ impl<'a> RsyncBackupClient<'a> {
         Ok(RsyncBackupClient {
             app_config,
             rsync_config,
-            previous_backup: previous_backup.map(|f| PathBuf::from(f)),
+            previous_backup: previous_backup.map(PathBuf::from),
         })
     }
 
@@ -100,7 +100,7 @@ impl<'a> BackupClient for RsyncBackupClient<'a> {
         let destination_filepath = self.app_config.destination_path.clone().join(name);
         let timeout = self.rsync_config.timeout.map_or_else(
             || Duration::from_secs(DEFAULT_TIMEOUT_SECS),
-            |v| Duration::from_secs(v),
+            Duration::from_secs,
         );
 
         let span = trace_span!("rsync");

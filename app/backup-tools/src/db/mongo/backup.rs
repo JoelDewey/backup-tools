@@ -1,10 +1,10 @@
-use std::fs::create_dir_all;
 use crate::common::process::wait_for_subprocess;
 use crate::db::mongo::config;
 use crate::db::mongo::config::MongoConfig;
 use anyhow::{anyhow, Context, Result};
 use crossbeam::channel::Receiver;
 use envy::prefixed;
+use std::fs::create_dir_all;
 use std::path::Path;
 use subprocess::{Popen, Redirection};
 use tracing::{debug, info, trace_span};
@@ -22,7 +22,8 @@ pub fn backup_mongo(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Resu
         .map(|s| s as &str)
         .unwrap_or_else(|| "mongodb");
     let backup_path = base_backup_path.join(format!("mongo/{}", db_name));
-    create_dir_all(&backup_path).context("Failed to create backup directory during MongoDB backup.")?;
+    create_dir_all(&backup_path)
+        .context("Failed to create backup directory during MongoDB backup.")?;
 
     start_backup(&config, &backup_path, shutdown_rx)?;
 
@@ -78,8 +79,7 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
         process = process.arg("--queryFile").arg(query_file.as_os_str());
     }
 
-    process = process
-        .arg(connection_string.as_str());
+    process = process.arg(connection_string.as_str());
 
     debug!("Final mongodump command: {}", &process.to_cmdline_lossy());
 

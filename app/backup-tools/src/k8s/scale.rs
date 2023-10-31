@@ -83,7 +83,7 @@ fn scale(
 
     info!("Replica count prior to scale operation: {}", prev_replicas);
 
-    info!("Beginning scale to target replica count of {}; waiting 120 seconds for the scale down to complete.", &target_replicas);
+    info!("Beginning scale to target replica count of {}; waiting 120 seconds for the scaling to complete.", &target_replicas);
     client.scale(namespace, &config.service_deployment_name, target_replicas)?;
 
     let delay = Duration::from_secs(1);

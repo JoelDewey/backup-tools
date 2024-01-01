@@ -44,6 +44,8 @@ Configuration is performed by providing one's own `values.yaml` file for the fol
 
 ### `cronJob`
 
+* `enabled`: If `false`, the `CronJob` resource will not be deployed. Defaults to `true`.
+* `suspend`: Configures the `spec.suspend` option of the `CronJob`. Defaults to `false`.
 * `schedule`: A cron expression for how often the `Job` should be ran.
 * `concurrencyPolicy`: Configures the [`concurrencyPolicy`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#concurrency-policy) 
   of the `CronJob`. Defaults to `Replace`.

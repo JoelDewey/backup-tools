@@ -13,3 +13,31 @@ The application itself is written using Rust and is deployable via a provided He
 [the documentation and code for the application](app/backup-tools) to learn more about how to build, run, and configure 
 the application and then read through [the Helm chart and its documentation](charts/backup-tools) to learn more about 
 how to deploy the application to a Kubernetes cluster.
+
+## Restoring from Backup
+
+backup-tools does not have any automated facility for restoring from backups. It is expected that an administrator 
+restore file backups to the correct locations and, if necessary, execute the correct database restore tool using the 
+database backups.
+
+### PostgreSQL
+
+To restore a PostgreSQL backup:
+
+```bash
+cd /path/to/directory/with/toc.dat
+pg_restore -h hostname.local -p 5432 -U username --create -Fd -d database .
+```
+
+### MongoDB
+
+To restore a MongoDB backup:
+
+```bash
+cd /path/to/directory/with/mongo.gz
+mongorestore \
+  --gzip \
+  --archive=mongo.gz \ # '=' here is _required_!
+  -u admin \
+  --authenticationDatabase admin
+```

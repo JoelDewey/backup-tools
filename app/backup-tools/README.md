@@ -20,7 +20,7 @@ backup-tools requires the following to be installed:
 * Rust 1.73 or greater.
 * `rsync`
 * `tar`
-* `pg_dump` (commonly in a `postgresl-client` package)
+* `pg_dump` (commonly in a `postgresql-client` package)
 * `mongodump` (commonly in a `mongodb-tools` package)
 
 It is designed to be run via a container in a Kubernetes cluster and expects that a bearer token and certificate for 
@@ -43,7 +43,8 @@ backup-tools supports various configuration options, provided as environment var
 ### General Application Configuration
 
 * `BACKUP_NAME` (Required): Some string, safe for use in a file path, that is used in the final name of the directory
-  created within the target directory (e.g. `YYYY-mm-DD_HHMMSS_BackupName`).
+  created within the target directory. This value will be appended to the current date and time to create the final name 
+  for the directory (e.g. `YYYY-mm-DD_HHMMSS_BackupName`).
 * `SOURCE_PATH` (Required): The path to the source directory that backup-tools will copy from to the destination path; 
   this path _must_ be writable as it will be used to store the database backup if needed.
 * `DESTINATION_PATH` (Required): The path to the directory of backups. Backups will be added as subdirectories of this  

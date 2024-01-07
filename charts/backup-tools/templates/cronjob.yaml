@@ -159,7 +159,6 @@ spec:
                 {{- range .sources }}
                 - name: {{ .name }}
                   mountPath: {{ .mountPath }}
-                  readOnly: true
                 {{- end }}
                 {{- end }}
                 {{- range .Values.extraVolumes }}

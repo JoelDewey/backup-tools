@@ -126,6 +126,8 @@ volume:
   # - name: ""
   #   claimName: ""
   #   mountPath: ""
+  #   readOnlyPvc: false
+  #   readOnlyMount: false
   destination:
     claimName: "backup-tools-destination"
     createPvc: false

@@ -174,6 +174,8 @@ An array of source volumes to copy from. Each element has three properties:
 * `mountPath`: Where the volume should be mounted to inside the container; in order for the volume's contents to be 
   included in a backup, the volume _must_ be mounted as a subdirectory of `env.config.app.sourcePath`. For example, if 
   the default source path `/source` is used, then the `mountPath` must be `/source/my_volume`.
+* `readOnlyPvc`: Value of `readOnly` on the PVC. Defaults to `false`.
+* `readOnly`: Value of `readOnly` on the volume mount. Defaults to `false`.
 
 #### `destination`
 

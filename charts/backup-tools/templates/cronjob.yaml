@@ -159,7 +159,7 @@ spec:
                 {{- range .sources }}
                 - name: {{ .name }}
                   mountPath: {{ .mountPath }}
-                  readOnly: true
+                  readOnly: {{ .readOnlyMount | default false }}
                 {{- end }}
                 {{- end }}
                 {{- range .Values.extraVolumes }}
@@ -180,6 +180,7 @@ spec:
             - name: {{ .name }}
               persistentVolumeClaim:
                 claimName: {{ .claimName }}
+                readOnly: {{ .readOnlyPvc | default false }}
             {{- end }}
             {{- end }}
             {{- range .Values.extraVolumes }}

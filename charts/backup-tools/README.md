@@ -29,7 +29,7 @@ Configuration is performed by providing one's own `values.yaml` file for the fol
 
 ### `image`
 
-* `tag`: Overrides the default tag set in the chart.
+* `tag`: Overrides the default tag, `latest`, set in the chart.
 
 ### `serviceAccount`
 

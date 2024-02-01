@@ -3,6 +3,7 @@ use crate::k8s::{cert, K8sConfig};
 use anyhow::{anyhow, Context, Result};
 use serde::Serialize;
 use std::sync::Arc;
+use tracing::debug;
 use ureq::{Error, MiddlewareNext, Request, Response};
 use url::Url;
 
@@ -65,6 +66,7 @@ impl DefaultK8sClient {
     pub fn new(config: &K8sConfig) -> Result<DefaultK8sClient> {
         let kube_base_url = DefaultK8sClient::get_url(config)?;
         let token = DefaultK8sClient::get_token(config)?;
+        debug!("Token Byte Length: {}", &token.len());
 
         let root_store = cert::install(config)?;
         let tls_config = rustls::ClientConfig::builder()

@@ -20,7 +20,7 @@ tag-name = "v{{version}}"
 
 [dependencies]
 anyhow = { version = "1.0.75", features = ["backtrace"] }
-chrono = { version = "0.4.31", default-features = false, features = ["alloc", "std", "clock"] }
+chrono = { version = "0.4.33", default-features = false, features = ["alloc", "std", "clock"] }
 crossbeam = "0.8.2"
 ctrlc = { version = "3.4.1", features = ["termination"] }
 dotenvy = "0.15.7"

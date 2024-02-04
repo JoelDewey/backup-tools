@@ -28,7 +28,6 @@ envy = "0.4.2"
 rustls = "0.22.2"
 rustls-native-certs = "0.7.0"
 rustls-pemfile = "2.0.0"
-rustls-pki-types = "1.2.0"
 serde = { version = "1.0.196", features = ["derive"] }
 subprocess = "0.2.9"
 tracing = "0.1.40"

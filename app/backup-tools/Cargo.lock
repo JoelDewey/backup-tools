@@ -84,7 +84,6 @@ dependencies = [
  "rustls",
  "rustls-native-certs",
  "rustls-pemfile",
- "rustls-pki-types",
  "serde",
  "subprocess",
  "tracing",

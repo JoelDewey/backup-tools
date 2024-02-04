@@ -32,6 +32,6 @@ serde = { version = "1.0.196", features = ["derive"] }
 subprocess = "0.2.9"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-ureq = { version = "2.8.0", features = ["native-certs", "json", "tls"] }
+ureq = { version = "2.9.4", features = ["native-certs", "json", "tls"] }
 # https://github.com/algesten/ureq/blob/2300a5b3787b1ac800314dc47f075f4850026bb3/Cargo.toml#L47
 url = "=2.3.1"

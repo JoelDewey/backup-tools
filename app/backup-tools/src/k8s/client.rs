@@ -70,7 +70,6 @@ impl DefaultK8sClient {
 
         let root_store = cert::install(config)?;
         let tls_config = rustls::ClientConfig::builder()
-            .with_safe_defaults()
             .with_root_certificates(root_store)
             .with_no_client_auth();
 

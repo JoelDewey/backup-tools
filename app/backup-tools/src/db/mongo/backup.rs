@@ -1,4 +1,4 @@
-use crate::common::process::wait_for_subprocess;
+use crate::common::process::wait_for_child_with_redirection;
 use crate::db::mongo::config;
 use crate::db::mongo::config::MongoConfig;
 use anyhow::{anyhow, Context, Result};
@@ -6,7 +6,7 @@ use crossbeam::channel::Receiver;
 use envy::prefixed;
 use std::fs::create_dir_all;
 use std::path::Path;
-use subprocess::{Popen, Redirection};
+use std::process::{Child, Command, Stdio};
 use tracing::{debug, info, trace_span};
 use url::Url;
 
@@ -37,7 +37,7 @@ fn get_mongo_config() -> Result<MongoConfig> {
         .context("Error while mapping MongoConfig from individual env vars.")
 }
 
-fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
+fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Child> {
     let port = &config.port.unwrap_or(config::DEFAULT_PORT);
     let connection_string = Url::parse(&format!("mongodb://{}:{}", &config.host, port))
         .context("Error encountered while creating MongoDB connection string.")?;
@@ -48,48 +48,51 @@ fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Popen> {
     // Actual errors are reported via the status code per MongoDB's developers.
     // https://jira.mongodb.org/browse/TOOLS-1484
 
-    let mut process = subprocess::Exec::cmd("mongodump")
-        .stdout(Redirection::Pipe)
-        .stderr(Redirection::Merge)
-        .cwd(save_path)
+    let mut process = Command::new("mongodump");
+    let mut process_ref = &mut process;
+
+    process_ref
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .current_dir(save_path)
         .arg("--config")
         .arg(config.configuration_file.as_os_str())
-        .arg("--username")
-        .arg(&config.username)
+        .args(["--username", &config.username])
         .arg("--gzip")
         .arg("--archive=mongo.gz");
 
     if let Some(db) = &config.database_name {
-        process = process.arg("--db").arg(db).arg("--dumpDbUsersAndRoles");
+        process_ref = process_ref.args(["--db", db]).arg("--dumpDbUsersAndRoles");
     }
 
     if let Some(adb) = &config.authentication_database_name {
-        process = process.arg("--authenticationDatabase").arg(adb);
+        process_ref = process_ref.args(["--authenticationDatabase", adb]);
     }
 
     if let Some(auth_mechanism) = &config.authentication_mechanism {
-        process = process.arg("--authenticationMechanism").arg(auth_mechanism);
+        process_ref = process_ref.args(["--authenticationMechanism", auth_mechanism]);
     }
 
     if let Some(collection) = &config.collection {
-        process = process.arg("--collection").arg(collection);
+        process_ref = process_ref.args(["--collection", collection]);
     }
 
     if let Some(query_file) = &config.query_file {
-        process = process.arg("--queryFile").arg(query_file.as_os_str());
+        process_ref = process_ref.arg("--queryFile").arg(query_file.as_os_str());
     }
 
-    process = process.arg(connection_string.as_str());
+    process_ref = process_ref.arg(connection_string.as_str());
 
-    debug!("Final mongodump command: {}", &process.to_cmdline_lossy());
+    debug!("Final mongodump command: {:?}", &process_ref);
 
-    process
-        .popen()
+    process_ref
+        .spawn()
         .context("Error while starting mongodump process.")
 }
 
 fn start_backup(config: &MongoConfig, save_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
     let process = execute_mongodump(config, save_path)?;
 
-    wait_for_subprocess(process, None, shutdown_rx)
+    wait_for_child_with_redirection(process, None, shutdown_rx, true)
 }

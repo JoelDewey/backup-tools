@@ -1,37 +1,75 @@
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use crossbeam::channel::{after, never, Receiver};
 use crossbeam::select;
-use std::thread::JoinHandle;
+use nix::libc::pid_t;
+use nix::sys::signal::{kill, Signal};
+use nix::unistd::Pid;
+use std::io::Read;
+use std::os::unix::process::ExitStatusExt;
+use std::process::{Child, Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
-use subprocess::{Communicator, ExitStatus, Popen};
-use tracing::{debug, error, error_span, info, info_span, trace, warn};
+use tracing::{error, info, instrument, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
-const TIMEOUT_BUFFER: Duration = Duration::from_secs(5 * 60); // Five minutes
 
-pub fn wait_for_subprocess(
-    mut process: Popen,
+pub fn create_command(program: &str) -> Command {
+    let mut command = Command::new(program);
+
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    command
+}
+
+pub fn wait_for_child(
+    child: Child,
     timeout: Option<Duration>,
     shutdown_rx: &Receiver<()>,
 ) -> Result<()> {
+    wait_for_child_with_redirection(child, timeout, shutdown_rx, false)
+}
+
+pub fn wait_for_child_with_redirection(
+    mut child: Child,
+    timeout: Option<Duration>,
+    shutdown_rx: &Receiver<()>,
+    stderr_as_stdout: bool,
+) -> Result<()> {
     let timeout = timeout.unwrap_or_else(|| Duration::from_secs(DEFAULT_TIMEOUT_SECS));
-    let wait_duration = Duration::from_secs(WAIT_DURATION_SECS);
-    let handle = read_from_communicator(
-        process.communicate_start(None),
-        timeout.saturating_add(TIMEOUT_BUFFER),
-    )
-    .map_err(|e| error!(ex=?e, "Failed to start communicator thread."))
-    .ok();
-    let duration = Some(wait_duration);
+    let sleep_duration = Some(Duration::from_secs(WAIT_DURATION_SECS));
     let start = Instant::now();
 
-    while process.poll().is_none() {
-        let wait = duration.map(after).unwrap_or(never());
+    loop {
+        let wait_result = child
+            .try_wait()
+            .map(|exit_status| handle_exit_status(exit_status, &mut child, stderr_as_stdout))
+            .map_err(|e| {
+                child
+                    .kill()
+                    .unwrap_or_else(|kill_error| error!(ex=?kill_error, "Error encountered while sending SIGKILL to child in response to another error."));
+                anyhow!(e)
+            });
 
+        if wait_result.is_err() {
+            return Err(wait_result
+                .expect_err("Did not find error in wait_result despite checking for one."));
+        }
+
+        let wait_option = wait_result.expect("Did not check wait_result for errors.");
+
+        if wait_option.is_some() {
+            return Ok(());
+        }
+
+        let sleep = sleep_duration.map(after).unwrap_or(never());
         select! {
-            recv(shutdown_rx) -> _ => process.terminate()?,
-            recv(wait) -> _ => {
+            recv(shutdown_rx) -> _ => {
+                kill(Pid::from_raw(child.id() as pid_t), Signal::SIGTERM)?;
+            },
+            recv(sleep) -> _ => {
                 if start.elapsed() <= timeout {
                     info!(
                         time_elapsed_seconds=&start.elapsed().as_secs(),
@@ -44,89 +82,89 @@ pub fn wait_for_subprocess(
                         timeout_seconds=timeout.as_secs(),
                         "Reached timeout while waiting for process completion, killing the process."
                     );
-                    process.kill()?;
+                    child.kill()?;
                     bail!("Killed process due to timeout.");
                 }
             }
         }
     }
+}
 
-    if let Some(h) = handle {
-        info!("Waiting for additional stdout/stderr output until the timeout is reached.");
-        h.join().expect("Couldn't join to the communicator thread.");
+#[instrument(name = "stdout", skip_all)]
+fn write_stdout(buffered: Result<String, std::io::Error>) {
+    buffered
+        .map(|buf| {
+            for line in buf.lines() {
+                info!("{}", line);
+            }
+        })
+        .map_err(|e| error!(ex=?e, "Failed to read from stdout."))
+        .unwrap_or(());
+}
+
+#[instrument(name = "stderr", skip_all)]
+fn write_stderr(buffered: Result<String, std::io::Error>) {
+    buffered
+        .map(|buf| {
+            for line in buf.lines() {
+                error!("{}", line);
+            }
+        })
+        .map_err(|e| error!(ex=?e, "Failed to read from stdout."))
+        .unwrap_or(());
+}
+
+fn read_buffers_to_logs(child: &mut Child, stderr_to_stdout: bool) {
+    let stdout = child.stdout.take().map(|mut stdout| {
+        let mut buf = String::new();
+        stdout.read_to_string(&mut buf).map(|_| buf)
+    });
+
+    if let Some(stdout_result) = stdout {
+        write_stdout(stdout_result);
     }
 
-    let exit_status = process
-        .exit_status()
-        .ok_or_else(|| anyhow!("Failed to retrieve exit status from process."))?;
-    if exit_status.success() {
-        Ok(())
-    } else {
-        match exit_status {
-            ExitStatus::Exited(code) => {
-                warn!(
-                    exit_code = code,
-                    "Process exited with non-success exit code."
-                );
-            }
-            ExitStatus::Signaled(signal) => {
-                warn!(signal = signal, "Process exited due to a signal.")
-            }
-            ExitStatus::Other(val) => {
-                warn!(
-                    value = val,
-                    "Unexpected exit status that cannot be described."
-                )
-            }
-            ExitStatus::Undetermined => {
-                warn!("Process completed successfully but its exit code is not known.")
-            }
-        }
+    let stderr = child.stderr.take().map(|mut stderr| {
+        let mut buf = String::new();
+        stderr.read_to_string(&mut buf).map(|_| buf)
+    });
 
-        Err(anyhow!("Process did not complete successfully."))
+    if let Some(stderr_result) = stderr {
+        if stderr_to_stdout {
+            write_stdout(stderr_result);
+        } else {
+            write_stderr(stderr_result);
+        }
     }
 }
 
-fn read_from_communicator(communicator: Communicator, timeout: Duration) -> Result<JoinHandle<()>> {
-    std::thread::Builder::new()
-        .name(String::from("Process Communicator"))
-        .spawn(move || {
-            let mut c = communicator.limit_time(timeout);
+fn handle_exit_status(
+    status: Option<ExitStatus>,
+    child: &mut Child,
+    stderr_to_stdout: bool,
+) -> Option<()> {
+    status.map(|exit_status| {
+        read_buffers_to_logs(child, stderr_to_stdout);
 
-            match c.read_string() {
-                Ok(tuple) => {
-                    if let Some(stdout) = tuple.0 {
-                        if stdout.is_empty() {
-                            trace!("Empty stdout.");
-                        } else {
-                            let stdout_span = info_span!("stdout");
-                            let stdout_guard = stdout_span.enter();
-                            for line in stdout.lines() {
-                                info!("{}", line);
-                            }
-                            drop(stdout_guard);
-                        }
-                    }
-
-                    if let Some(stderr) = tuple.1 {
-                        if stderr.is_empty() {
-                            trace!("Empty stderr.");
-                        } else {
-                            let stderr_span = error_span!("stderr");
-                            let stderr_guard = stderr_span.enter();
-                            for line in stderr.lines() {
-                                error!("{}", line);
-                            }
-                            drop(stderr_guard);
-                        }
-                    }
+        exit_status
+            .code()
+            .map(|code| {
+                if !exit_status.success() {
+                    warn!(
+                        exit_code = code,
+                        "Process exited with non-success exit code."
+                    );
                 }
-                Err(e) => {
-                    error!(ex=?e, "Failed to read from stdout/stderr.");
-                }
-            }
-
-            debug!("Communicator ended.");
-        })
-        .context("Failed to start communicator thread.")
+            })
+            .unwrap_or_else(|| {
+                exit_status
+                    .signal()
+                    .map(|signal| {
+                        warn!(signal = signal, "Process exited due to a signal.");
+                    })
+                    .unwrap_or_else(|| {
+                        warn!("Process completed but its exit code is not known.");
+                    })
+            })
+    })
 }

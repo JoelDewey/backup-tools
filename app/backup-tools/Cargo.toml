@@ -25,11 +25,11 @@ crossbeam = "0.8.4"
 ctrlc = { version = "3.4.2", features = ["termination"] }
 dotenvy = "0.15.7"
 envy = "0.4.2"
+nix = { version = "0.27.1", features = ["signal"] }
 rustls = "0.22.2"
 rustls-native-certs = "0.7.0"
 rustls-pemfile = "2.0.0"
 serde = { version = "1.0.196", features = ["derive"] }
-subprocess = "0.2.9"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 ureq = { version = "2.9.4", features = ["native-certs", "json", "tls"] }

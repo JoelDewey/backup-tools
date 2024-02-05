@@ -2,7 +2,6 @@ use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::path::PathBuf;
 
-
 pub const POSTGRES_PREFIX: &str = "POSTGRES_";
 pub const POSTGRES_ENV_URL: &str = "POSTGRES_URL";
 pub const DEFAULT_PGSQL_PORT: u16 = 5432;

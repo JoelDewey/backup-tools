@@ -1,13 +1,13 @@
 use crate::app_config::AppConfig;
-use crate::common::process::wait_for_subprocess;
+use crate::common::process::{create_command, wait_for_child};
 use crate::file::backup_client::BackupClient;
 use crate::file::tar::config::TarConfig;
 use anyhow::Context;
 use anyhow::Result;
 use crossbeam::channel::Receiver;
 use std::path::Path;
+use std::process::Child;
 use std::time::Duration;
-use subprocess::{Popen, Redirection};
 use tracing::trace_span;
 
 pub const COMPRESSED_CONFIG_PREFIX: &str = "COMPRESSED_";
@@ -29,22 +29,23 @@ impl<'a> TarBackupClient<'a> {
             tar_config,
         })
     }
-    fn execute_tar(&self, destination_filepath: &Path) -> Result<Popen> {
-        let mut builder = subprocess::Exec::cmd("tar")
-            .stdout(Redirection::Pipe)
-            .stderr(Redirection::Pipe)
+    fn execute_tar(&self, destination_filepath: &Path) -> Result<Child> {
+        let mut builder = create_command("tar");
+        let mut builder_ref = &mut builder;
+
+        builder_ref
             .arg("-zcvf")
             .arg(destination_filepath.as_os_str());
 
         if let Some(excludes) = &self.tar_config.exclude_file_path {
-            builder = builder.arg("--exclude-from").arg(excludes.as_os_str());
+            builder_ref = builder_ref.arg("--exclude-from").arg(excludes.as_os_str());
         }
 
-        builder
+        builder_ref
             .arg("-C")
             .arg(self.app_config.source_path.as_os_str())
             .arg(".")
-            .popen()
+            .spawn()
             .context("Error while starting tar process and returning Popen.")
     }
 }
@@ -61,6 +62,6 @@ impl<'a> BackupClient for TarBackupClient<'a> {
         let span = trace_span!("tar");
         let _ = span.enter();
         let process = self.execute_tar(&destination_filepath)?;
-        wait_for_subprocess(process, Some(timeout), shutdown_rx)
+        wait_for_child(process, Some(timeout), shutdown_rx)
     }
 }

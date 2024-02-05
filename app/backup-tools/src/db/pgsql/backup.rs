@@ -1,4 +1,4 @@
-use crate::common::process::wait_for_subprocess;
+use crate::common::process::{create_command, wait_for_child};
 use crate::db::pgsql::config;
 use crate::db::pgsql::config::{PgDumpArgs, PostgresConfig};
 use anyhow::{anyhow, Context, Result};
@@ -6,7 +6,7 @@ use crossbeam::channel::Receiver;
 use envy::prefixed;
 use std::env;
 use std::path::Path;
-use subprocess::{Popen, Redirection};
+use std::process::Child;
 use tracing::{debug, info, trace_span};
 
 pub fn backup_postgres(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
@@ -46,41 +46,38 @@ fn get_postgres_config() -> Result<PostgresConfig> {
     )
 }
 
-fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Popen> {
+fn execute_pg_dump(config: &PostgresConfig, save_path: &Path) -> Result<Child> {
     let port = &config.port.unwrap_or(config::DEFAULT_PGSQL_PORT);
 
-    let mut process = subprocess::Exec::cmd("pg_dump")
-        .stdout(Redirection::Pipe)
-        .stderr(Redirection::Pipe)
+    let mut process = create_command("pg_dump");
+    let mut process_ref = &mut process;
+
+    process_ref
         .env("PGPASSWORD", &config.password)
-        .arg("-h")
-        .arg(&config.host)
-        .arg("-p")
-        .arg(port.to_string())
-        .arg("-U")
-        .arg(&config.username);
+        .args(["-h", &config.host])
+        .args(["-p", &port.to_string()])
+        .args(["-U", &config.username]);
 
     if let Some(db) = &config.database_name {
-        process = process.arg("-d").arg(db);
+        process_ref = process_ref.args(["-d", db]);
     }
 
-    process = process
+    process_ref = process_ref
         .arg("-w")
         .arg("--lock-wait-timeout=10")
-        .arg("-F")
-        .arg("d")
+        .args(["-F", "d"])
         .arg("-f")
         .arg(save_path.as_os_str());
 
-    debug!("Final pg_dump command: {}", &process.to_cmdline_lossy());
+    debug!("Final pg_dump command: {:?}", &process_ref);
 
-    process
-        .popen()
+    process_ref
+        .spawn()
         .context("Error while starting pg_dump process and returning Popen.")
 }
 
 fn start_pg_backup(args: &PgDumpArgs, shutdown_rx: &Receiver<()>) -> Result<()> {
     let process = execute_pg_dump(&args.config, &args.backup_path)?;
 
-    wait_for_subprocess(process, None, shutdown_rx)
+    wait_for_child(process, None, shutdown_rx)
 }

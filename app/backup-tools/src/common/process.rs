@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use crossbeam::channel::{after, never, Receiver};
 use crossbeam::select;
 use nix::libc::pid_t;
@@ -82,7 +82,9 @@ pub fn wait_for_child_with_redirection(
                         timeout_seconds=timeout.as_secs(),
                         "Reached timeout while waiting for process completion, killing the process."
                     );
-                    child.kill()?;
+                    child.kill().context("Failed to send SIGKILL to child.")?;
+                    let exit_status = child.wait().context("Failed to retrieve exit status after sending SIGKILL to child.")?;
+                    handle_exit_status(Some(exit_status), &mut child, stderr_as_stdout).unwrap_or(());
                     bail!("Killed process due to timeout.");
                 }
             }

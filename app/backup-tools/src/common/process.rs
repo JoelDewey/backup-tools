@@ -69,6 +69,9 @@ pub fn wait_for_child_with_redirection(
             recv(shutdown_rx) -> _ => {
                 warn!("Received notification to shutdown, sending SIGTERM to process.");
                 kill(Pid::from_raw(child.id() as pid_t), Signal::SIGTERM)?;
+                let exit_status = child.wait().context("Failed to retrieve exit status after sending SIGTERM to child.")?;
+                handle_exit_status(Some(exit_status), &mut child, stderr_as_stdout).unwrap_or(());
+                bail!("Killed process due to shutdown.");
             },
             recv(sleep) -> _ => {
                 if start.elapsed() <= timeout {

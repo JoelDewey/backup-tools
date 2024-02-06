@@ -67,6 +67,7 @@ pub fn wait_for_child_with_redirection(
         let sleep = sleep_duration.map(after).unwrap_or(never());
         select! {
             recv(shutdown_rx) -> _ => {
+                warn!("Received notification to shutdown, sending SIGTERM to process.");
                 kill(Pid::from_raw(child.id() as pid_t), Signal::SIGTERM)?;
             },
             recv(sleep) -> _ => {

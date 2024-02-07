@@ -116,7 +116,7 @@ fn write_stderr(buffered: Result<String, std::io::Error>) {
                 error!("{}", line);
             }
         })
-        .map_err(|e| error!(ex=?e, "Failed to read from stdout."))
+        .map_err(|e| error!(ex=?e, "Failed to read from stderr."))
         .unwrap_or(());
 }
 

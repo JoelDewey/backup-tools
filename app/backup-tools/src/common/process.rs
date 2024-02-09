@@ -1,14 +1,16 @@
+use std::io;
 use anyhow::{anyhow, bail, Context, Result};
 use crossbeam::channel::{after, never, Receiver};
 use crossbeam::select;
 use nix::libc::pid_t;
 use nix::sys::signal::{kill, Signal};
 use nix::unistd::Pid;
-use std::io::Read;
+use std::io::{BufRead, BufReader};
 use std::os::unix::process::ExitStatusExt;
 use std::process::{Child, Command, ExitStatus, Stdio};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
-use tracing::{error, info, instrument, warn};
+use tracing::{debug, error, error_span, info, info_span, Span, warn};
 
 const WAIT_DURATION_SECS: u64 = 5;
 const DEFAULT_TIMEOUT_SECS: u64 = (60 * 2) + 30; // Two minutes and thirty seconds
@@ -42,10 +44,38 @@ pub fn wait_for_child_with_redirection(
     let sleep_duration = Some(Duration::from_secs(WAIT_DURATION_SECS));
     let start = Instant::now();
 
+    let stdout_thread = child
+        .stdout
+        .take()
+        .and_then(|s| read_stream(info_span!("stdout"), s, Box::new(|line| info!("{}", line)))
+            .map_err(|e| {
+                error!(ex=?e, "Failed to open stdout stream.");
+                e
+            })
+            .ok()
+        );
+
+    let stderr_thread = child
+        .stderr
+        .take()
+        .and_then(|s| {
+            let stream_handle = if stderr_as_stdout {
+                read_stream(info_span!("stdout"), s, Box::new(|line| info!("{}", line)))
+            } else {
+                read_stream(error_span!("stderr"), s, Box::new(|line| error!("{}", line)))
+            };
+            stream_handle
+                .map_err(|e| {
+                    error!(ex=?e, "Failed to open stderr stream.");
+                    e
+                })
+                .ok()
+        });
+
     loop {
         let wait_result = child
             .try_wait()
-            .map(|exit_status| handle_exit_status(exit_status, &mut child, stderr_as_stdout))
+            .map(handle_exit_status)
             .map_err(|e| {
                 child
                     .kill()
@@ -61,7 +91,7 @@ pub fn wait_for_child_with_redirection(
         let wait_option = wait_result.expect("Did not check wait_result for errors.");
 
         if wait_option.is_some() {
-            return Ok(());
+            break;
         }
 
         let sleep = sleep_duration.map(after).unwrap_or(never());
@@ -70,12 +100,12 @@ pub fn wait_for_child_with_redirection(
                 warn!("Received notification to shutdown, sending SIGTERM to process.");
                 kill(Pid::from_raw(child.id() as pid_t), Signal::SIGTERM)?;
                 let exit_status = child.wait().context("Failed to retrieve exit status after sending SIGTERM to child.")?;
-                handle_exit_status(Some(exit_status), &mut child, stderr_as_stdout).unwrap_or(());
+                handle_exit_status(Some(exit_status)).unwrap_or(());
                 bail!("Killed process due to shutdown.");
             },
             recv(sleep) -> _ => {
                 if start.elapsed() <= timeout {
-                    info!(
+                    debug!(
                         time_elapsed_seconds=&start.elapsed().as_secs(),
                         "Process still running, waiting another {} seconds.",
                         WAIT_DURATION_SECS
@@ -88,70 +118,28 @@ pub fn wait_for_child_with_redirection(
                     );
                     child.kill().context("Failed to send SIGKILL to child.")?;
                     let exit_status = child.wait().context("Failed to retrieve exit status after sending SIGKILL to child.")?;
-                    handle_exit_status(Some(exit_status), &mut child, stderr_as_stdout).unwrap_or(());
+                    handle_exit_status(Some(exit_status)).unwrap_or(());
                     bail!("Killed process due to timeout.");
                 }
             }
         }
     }
-}
 
-#[instrument(name = "stdout", skip_all)]
-fn write_stdout(buffered: Result<String, std::io::Error>) {
-    buffered
-        .map(|buf| {
-            for line in buf.lines() {
-                info!("{}", line);
-            }
-        })
-        .map_err(|e| error!(ex=?e, "Failed to read from stdout."))
-        .unwrap_or(());
-}
-
-#[instrument(name = "stderr", skip_all)]
-fn write_stderr(buffered: Result<String, std::io::Error>) {
-    buffered
-        .map(|buf| {
-            for line in buf.lines() {
-                error!("{}", line);
-            }
-        })
-        .map_err(|e| error!(ex=?e, "Failed to read from stderr."))
-        .unwrap_or(());
-}
-
-fn read_buffers_to_logs(child: &mut Child, stderr_to_stdout: bool) {
-    let stdout = child.stdout.take().map(|mut stdout| {
-        let mut buf = String::new();
-        stdout.read_to_string(&mut buf).map(|_| buf)
-    });
-
-    if let Some(stdout_result) = stdout {
-        write_stdout(stdout_result);
+    if let Some(handle) = stdout_thread {
+        handle.join().expect("Could not join to stdout thread.");
     }
 
-    let stderr = child.stderr.take().map(|mut stderr| {
-        let mut buf = String::new();
-        stderr.read_to_string(&mut buf).map(|_| buf)
-    });
-
-    if let Some(stderr_result) = stderr {
-        if stderr_to_stdout {
-            write_stdout(stderr_result);
-        } else {
-            write_stderr(stderr_result);
-        }
+    if let Some(handle) = stderr_thread {
+        handle.join().expect("Could not join to stderr thread.");
     }
+
+    Ok(())
 }
 
 fn handle_exit_status(
-    status: Option<ExitStatus>,
-    child: &mut Child,
-    stderr_to_stdout: bool,
+    status: Option<ExitStatus>
 ) -> Option<()> {
     status.map(|exit_status| {
-        read_buffers_to_logs(child, stderr_to_stdout);
-
         exit_status
             .code()
             .map(|code| {
@@ -173,4 +161,19 @@ fn handle_exit_status(
                     })
             })
     })
+}
+
+fn read_stream<T: 'static + io::Read + Send>(span: Span, stream: T, print_func: Box<dyn Fn(String) + Send>) -> Result<JoinHandle<()>> {
+    let name = span.metadata().map(|s| s.name()).unwrap_or_else(|| "Process Thread");
+    let buf_reader = BufReader::new(stream);
+    std::thread::Builder::new()
+        .name(String::from(name))
+        .spawn(move || {
+            let _enter = span.enter();
+            buf_reader
+                .lines()
+                .map_while(Result::ok)
+                .for_each(print_func)
+        })
+        .context("Failed to start stdout thread.")
 }

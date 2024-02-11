@@ -12,7 +12,7 @@ use url::Url;
 
 pub fn backup_mongo(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
     let span = trace_span!("mongo");
-    let _ = span.enter();
+    let _entered = span.enter();
 
     info!("Starting MongoDB backup.");
     let config = get_mongo_config()?;

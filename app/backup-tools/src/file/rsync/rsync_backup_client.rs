@@ -102,7 +102,7 @@ impl<'a> BackupClient for RsyncBackupClient<'a> {
         );
 
         let span = trace_span!("rsync");
-        let _ = span.enter();
+        let _entered = span.enter();
         let process = self.execute_rsync(&destination_filepath)?;
         wait_for_child(process, Some(timeout), shutdown_rx)
     }

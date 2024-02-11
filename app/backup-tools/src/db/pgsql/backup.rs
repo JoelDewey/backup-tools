@@ -1,7 +1,7 @@
 use crate::common::process::{create_command, wait_for_child};
 use crate::db::pgsql::config;
 use crate::db::pgsql::config::{PgDumpArgs, PostgresConfig};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use crossbeam::channel::Receiver;
 use envy::prefixed;
 use std::env;
@@ -11,7 +11,7 @@ use tracing::{debug, info, trace_span};
 
 pub fn backup_postgres(base_backup_path: &Path, shutdown_rx: &Receiver<()>) -> Result<()> {
     let span = trace_span!("pgsql");
-    let _ = span.enter();
+    let _entered = span.enter();
 
     info!("Starting PostgreSQL backup.");
     let config = get_postgres_config()?;
@@ -39,7 +39,6 @@ fn get_postgres_config() -> Result<PostgresConfig> {
         |_| {
             prefixed(config::POSTGRES_PREFIX)
                 .from_env()
-                .map_err(|e| anyhow!(e))
                 .context("Error while mapping PostgresConfig from individual env vars.")
         },
         |s| PostgresConfig::from_url(&s).context("Error while mapping PostgresConfig from URL."),

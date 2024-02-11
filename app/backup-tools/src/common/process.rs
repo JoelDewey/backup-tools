@@ -48,10 +48,7 @@ pub fn wait_for_child_with_redirection(
         .stdout
         .take()
         .and_then(|s| read_stream(info_span!("stdout"), s, Box::new(|line| info!("{}", line)))
-            .map_err(|e| {
-                error!(ex=?e, "Failed to open stdout stream.");
-                e
-            })
+            .inspect_err(|e| error!(ex=?e, "Failed to open stdout stream."))
             .ok()
         );
 
@@ -65,10 +62,7 @@ pub fn wait_for_child_with_redirection(
                 read_stream(error_span!("stderr"), s, Box::new(|line| error!("{}", line)))
             };
             stream_handle
-                .map_err(|e| {
-                    error!(ex=?e, "Failed to open stderr stream.");
-                    e
-                })
+                .inspect_err(|e| error!(ex=?e, "Failed to open stderr stream."))
                 .ok()
         });
 

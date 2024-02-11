@@ -10,7 +10,7 @@ const K8S_PREFIX: &str = "KUBERNETES_";
 
 pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
     let span = trace_span!("k8s");
-    let _ = span.enter();
+    let _entered = span.enter();
 
     let k8s_config = prefixed(K8S_PREFIX).from_env::<K8sConfig>()?;
     let k8s_client = DefaultK8sClient::new(&k8s_config)?;
@@ -29,9 +29,7 @@ pub fn scale_deployment(inner: impl FnOnce() -> Result<()>) -> Result<()> {
     } else {
         info!("Scaling down deployment...");
         scale_down(&service_namespace, &k8s_config, &k8s_client)
-            .map(|_| {
-                info!("Finished scaling down deployment.");
-            })
+            .inspect(|_| info!("Finished scaling down deployment."))
             .context("Failed to scale down deployment.")?;
     }
 

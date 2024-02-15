@@ -12,6 +12,7 @@ spec:
   suspend: {{ .Values.cronJob.suspend }}
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: {{ .Values.cronJob.ttlSecondsAfterFinished }}
       template:
         metadata:
             {{- with .Values.podAnnotations }}
@@ -37,24 +38,7 @@ spec:
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               envFrom:
                 - configMapRef:
-                    name: "{{ include "backup-tools.fullname" . }}-app-env-vars"
-                {{- if eq .Values.env.config.app.backupType "COMPRESSED" }}
-                - configMapRef:
-                    name: "{{ include "backup-tools.fullname" . }}-compressed-env-vars"
-                {{- end }}
-                {{- if eq .Values.env.config.app.backupType "INCREMENTAL" }}
-                - configMapRef:
-                    name: "{{ include "backup-tools.fullname" . }}-incr-env-vars"
-                {{- end }}
-                - configMapRef:
-                    name: "{{ include "backup-tools.fullname" . }}-kubernetes-env-vars"
-                    optional: true
-                - configMapRef:
-                    name: "{{ include "backup-tools.fullname" . }}-mongo-env-vars"
-                    optional: true
-                - configMapRef:
-                    name: "{{ include "backup-tools.fullname" . }}-postgres-env-vars"
-                    optional: true
+                    name: "{{ include "backup-tools.fullname" . }}-env-vars"
               env:
                 {{- if .Values.env.config.app.mongoBackupEnabled }}
                 {{- with .Values.env.config.mongo }}

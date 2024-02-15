@@ -30,6 +30,7 @@ cronJob:
   schedule: "10 3 * * 3"
   concurrencyPolicy: "Replace"
   startingDeadlineSeconds: 60
+  ttlSecondsAfterFinished: 604800 # 7 Days
 
 podAnnotations: {}
 

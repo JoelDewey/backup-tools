@@ -21,6 +21,7 @@ By default, this Helm chart:
 * Opts in to scaling the `Deployment`.
 * Disables database backups.
 * Configures an incremental backup.
+* Keeps `Job` instances around for 7 days (`ttlSecondsAfterFinished`).
 
 
 ## Configuration
@@ -50,6 +51,9 @@ Configuration is performed by providing one's own `values.yaml` file for the fol
   of the `CronJob`. Defaults to `Replace`.
 * `startingDeadlineSeconds`: Configures the [`startingDeadlineSeconds`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#starting-deadline) 
   of the `CronJob`. Defaults to `60` seconds.
+* `ttlSecondsAfterFinished`: The time-to-live for finished `Job` resources; `Job` resources older than this value are 
+   automatically cleaned up. Read the [documentation](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/) 
+   for more information. Defaults to 7 days.
 
 ### `podSecurityContext`
 

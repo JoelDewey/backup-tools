@@ -7,7 +7,7 @@ on:
     # Publish semver tags as releases.
     tags: [ 'helm-v*.*.*', 'helm-v*.*.*-alpha.*', 'helm-v*.*.*-beta.*', 'helm-v*.*.*-rc.*' ]
     paths:
-      - "helm/backup-tools/**"
+      - "charts/backup-tools/**"
   pull_request:
     branches: [ "main" ]
 

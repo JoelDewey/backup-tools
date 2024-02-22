@@ -4,8 +4,8 @@ name: "Publish Helm Charts"
 
 on:
   push:
-    # Publish semver tags as releases.
-    tags: [ 'helm-v*.*.*', 'helm-v*.*.*-alpha.*', 'helm-v*.*.*-beta.*', 'helm-v*.*.*-rc.*' ]
+    branches:
+      - main
     paths:
       - "charts/backup-tools/**"
 

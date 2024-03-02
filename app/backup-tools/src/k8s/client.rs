@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tracing::debug;
 use ureq::{Error, MiddlewareNext, Request, Response};
 use url::Url;
+use crate::k8s::workload_type::WorkloadType;
 
 pub trait K8sClient {
     fn get_available_replicas(&self, namespace: &str, name: &str) -> Result<i32>;
@@ -56,6 +57,7 @@ pub struct DefaultK8sClient {
     kube_base_url: Url,
     token: String,
     agent: ureq::Agent,
+    workload_type: String,
 }
 
 impl DefaultK8sClient {
@@ -73,11 +75,17 @@ impl DefaultK8sClient {
             .tls_config(Arc::new(tls_config))
             .middleware(logging_middleware)
             .build();
+        
+        let workload_type = match config.workload_type {
+            WorkloadType::Deployment => String::from("deployments"),
+            WorkloadType::StatefulSet => String::from("statefulsets"),
+        };
 
         Ok(DefaultK8sClient {
             kube_base_url,
             token,
             agent,
+            workload_type,
         })
     }
 
@@ -104,8 +112,8 @@ impl DefaultK8sClient {
 impl K8sClient for DefaultK8sClient {
     fn get_available_replicas(&self, namespace: &str, name: &str) -> Result<i32> {
         let path = format!(
-            "/apis/apps/v1/namespaces/{}/deployments/{}",
-            namespace, name
+            "/apis/apps/v1/namespaces/{}/{}/{}",
+            namespace, &self.workload_type, name
         );
         let url = self.kube_base_url.join(&path)?;
 
@@ -119,14 +127,14 @@ impl K8sClient for DefaultK8sClient {
 
         response
             .status
-            .ok_or_else(|| anyhow!("Failed to retrieve Deployment status."))
+            .ok_or_else(|| anyhow!("Failed to retrieve workload status."))
             .map(|r| r.available_replicas.unwrap_or(0))
     }
 
     fn scale(&self, namespace: &str, name: &str, count: i32) -> Result<()> {
         let path = format!(
-            "/apis/apps/v1/namespaces/{}/deployments/{}",
-            namespace, name
+            "/apis/apps/v1/namespaces/{}/{}/{}",
+            namespace, &self.workload_type, name
         );
         let url = self.kube_base_url.join(&path)?;
         let body = ScalePatch::new(count);

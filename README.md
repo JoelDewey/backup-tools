@@ -2,8 +2,8 @@
 
 An application to backup PostgreSQL databases and files for use within my home Kubernetes cluster.
 
-* Automatically scales down a given `Deployment` prior to performing backups and will scale it back to the original 
-  number of replicas after it has finished performing the backup operation.
+* Automatically scales down a given Kubernetes workload (e.g. `Deployment`) prior to performing backups and will scale 
+  it back to the original number of replicas after it has finished performing the backup operation.
 * Can connect to a PostgreSQL server and make a backup using `pg_dump`.
 * Can also connect to a MongoDB server and make a backup using `mongodump`. 
 * Creates new backups using `rsync`, using hard links to save on storage usage.

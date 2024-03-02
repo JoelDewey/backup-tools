@@ -18,7 +18,7 @@ By default, this Helm chart:
 * Drops all capabilities, sets a read-only root file system, runs as non-root, and runs as user and group `1029:1029`.
 * Copies data from a `/source` `emptyDir` volume to a `/destination` volume to be configured by the user.
 * Maintains up to five backups at a time, rotating out older backups as new ones are created.
-* Opts in to scaling the `Deployment`.
+* Opts in to scaling a `Deployment`.
 * Disables database backups.
 * Configures an incremental backup.
 * Keeps `Job` instances around for 7 days (`ttlSecondsAfterFinished`).
@@ -116,6 +116,7 @@ env:
       serviceNamespace: ""
       namespaceFile: "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
       serviceDeploymentName: ""
+      workloadType: "DEPLOYMENT"
     mongo:
       host: ""
       hostSecret: {}

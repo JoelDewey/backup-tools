@@ -3,10 +3,10 @@
 This is the Rust-based application for backup-tools. It coordinates executing several subprocesses to perform the 
 backup tasks:
 
-1. First, it optionally scales down a Kubernetes `Deployment` to zero replicas.
+1. First, it optionally scales down a Kubernetes workload to zero replicas.
 2. It then optionally executes `pg_dump` and/or `mongodump` to create a backup of a database.
 3. It then performs a file copy, via `rsync`, from a source directory to a target directory.
-4. It then scales up the aforementioned Kubernetes `Deployment` back to the original number of replicas, given 
+4. It then scales up the aforementioned Kubernetes workload back to the original number of replicas, given 
    that it was scaled down in the first step.
 
 Backups are saved with directory or file name taking the format `YYYY-mm-DD_HHMMSS_BackupName`
@@ -64,11 +64,12 @@ backup-tools supports various configuration options, provided as environment var
 
 ### Kubernetes Configuration
 
-These options configure the communication to the Kubernetes API made while scaling a `Deployment` to prevent the other 
+These options configure the communication to the Kubernetes API made while scaling a workload to prevent the other 
 application from modifying data while backup-tools copies it.
 
 It is assumed that a `Role`, `RoleBinding`, and `ServiceAccount` are available for the application to use. The `Role` 
-must provide access to the `get` and `patch` verbs on `apps` `Deployment` objects.
+must provide access to the `get` and `patch` verbs on `apps` objects that represent supported workloads (`Deployment` 
+and `StatefulSet` at the time of writing.)
 
 These settings are only utilized when `SCALE_DEPLOYMENT_ENABLED` is set to `true`.
 
@@ -78,10 +79,11 @@ These settings are only utilized when `SCALE_DEPLOYMENT_ENABLED` is set to `true
 * `KUBERNETES_SERVICE_HOST` (Required): The host of the Kubernetes API; usually provided by Kubernetes automatically.
 * `KUBERNETES_SERVICE_PORT_HTTPS` (Required): The port of the Kubernetes API; usually provided by Kubernetes automatically.
 * `KUBERNETES_SERVICE_DEPLOYMENT_NAME` (Required): The name of the `Deployment` to scale.
-* `KUBERNETES_SERVICE_NAMESPACE`: The namespace of the `Deployment` to scale; if not provided, backup-tools will read 
+* `KUBERNETES_SERVICE_NAMESPACE`: The namespace of the workload to scale; if not provided, backup-tools will read 
   from the `namespace` file mounted into the container by Kubernetes.
 * `KUBERNETES_NAMESPACE_FILE_PATH`: The path to the `namespace` file mounted into the container by Kubernetes. Only
   required when `KUBERNETES_SERVICE_NAMESPACE` is not set.
+* `KUBERNETES_WORKLOAD_TYPE`: The type of workload to scale; only `DEPLOYMENT` and `STATEFULSET` are supported.
 
 ### MongoDB Backup Configuration
 

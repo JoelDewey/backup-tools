@@ -6,5 +6,5 @@ metadata:
     {{- include "backup-tools.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["apps"]
-    resources: ["deployments"]
+    resources: ["deployments", "statefulsets"]
     verbs: ["get", "patch"]

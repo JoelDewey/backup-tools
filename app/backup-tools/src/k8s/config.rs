@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::path::PathBuf;
+use crate::k8s::workload_type::WorkloadType;
 
 #[derive(Debug, Deserialize)]
 pub struct K8sConfig {
@@ -10,4 +11,5 @@ pub struct K8sConfig {
     pub service_namespace: Option<String>,
     pub service_deployment_name: String,
     pub namespace_file_path: Option<PathBuf>,
+    pub workload_type: WorkloadType
 }

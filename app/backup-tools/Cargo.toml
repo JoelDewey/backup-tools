@@ -28,7 +28,7 @@ envy = "0.4.2"
 nix = { version = "0.27.1", features = ["signal"] }
 rustls = "0.22.2"
 rustls-native-certs = "0.7.0"
-rustls-pemfile = "2.1.0"
+rustls-pemfile = "2.1.1"
 serde = { version = "1.0.197", features = ["derive"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

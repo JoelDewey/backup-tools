@@ -81,7 +81,7 @@ dependencies = [
  "ctrlc",
  "dotenvy",
  "envy",
- "nix 0.27.1",
+ "nix",
  "rustls",
  "rustls-native-certs",
  "rustls-pemfile",
@@ -236,7 +236,7 @@ version = "3.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66ba08eff649795412705351c11358001781278102196f49623d9c8d240ed8b9"
 dependencies = [
- "nix 0.28.0",
+ "nix",
  "windows-sys 0.52.0",
 ]
 
@@ -379,17 +379,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7810e0be55b428ada41041c41f32c9f1a42817901b4ccf45fa3d4b6561e74c7"
 dependencies = [
  "adler",
-]
-
-[[package]]
-name = "nix"
-version = "0.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eb04e9c688eff1c89d72b407f168cf79bb9e867a9d3323ed6c01519eb9cc053"
-dependencies = [
- "bitflags 2.4.2",
- "cfg-if",
- "libc",
 ]
 
 [[package]]

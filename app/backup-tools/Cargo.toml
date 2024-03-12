@@ -19,7 +19,7 @@ sign-tag = true
 tag-name = "v{{version}}"
 
 [dependencies]
-anyhow = { version = "1.0.80", features = ["backtrace"] }
+anyhow = { version = "1.0.81", features = ["backtrace"] }
 chrono = { version = "0.4.35", default-features = false, features = ["alloc", "std", "clock"] }
 crossbeam = "0.8.4"
 ctrlc = { version = "3.4.3", features = ["termination"] }

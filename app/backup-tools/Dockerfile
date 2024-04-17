@@ -1,4 +1,4 @@
-ARG RUST_VERSION=1.76
+ARG RUST_VERSION=1.77.2
 ARG ALPINE_VERSION=3.19
 
 FROM rust:${RUST_VERSION}-alpine as build
@@ -11,7 +11,7 @@ RUN apk add --no-cache musl-dev \
 
 FROM alpine:${ALPINE_VERSION}
 
-RUN apk add --no-cache rsync postgresql-client tini tar mongodb-tools \
+RUN apk add --no-cache rsync postgresql16-client tini tar mongodb-tools \
     && mkdir /destination \
     && mkdir /source \
     && mkdir /config

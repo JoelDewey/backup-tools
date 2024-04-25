@@ -32,5 +32,5 @@ rustls-pemfile = "2.1.2"
 serde = { version = "1.0.198", features = ["derive"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-ureq = { version = "2.9.6", features = ["native-certs", "json", "tls"] }
+ureq = { version = "2.9.7", features = ["native-certs", "json", "tls"] }
 url = "2.5.0"

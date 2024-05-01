@@ -29,7 +29,7 @@ nix = { version = "0.28.0", features = ["signal"] }
 rustls = "0.22.2"
 rustls-native-certs = "0.7.0"
 rustls-pemfile = "2.1.2"
-serde = { version = "1.0.199", features = ["derive"] }
+serde = { version = "1.0.200", features = ["derive"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 ureq = { version = "2.9.7", features = ["native-certs", "json", "tls"] }

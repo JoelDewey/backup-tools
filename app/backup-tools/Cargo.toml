@@ -26,7 +26,7 @@ ctrlc = { version = "3.4.3", features = ["termination"] }
 dotenvy = "0.15.7"
 envy = "0.4.2"
 nix = { version = "0.28.0", features = ["signal"] }
-rustls = "0.22.2"
+rustls = "0.23.0"
 rustls-native-certs = "0.7.0"
 rustls-pemfile = "2.1.2"
 serde = { version = "1.0.200", features = ["derive"] }

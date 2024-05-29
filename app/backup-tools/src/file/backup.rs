@@ -28,7 +28,7 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
         &app_config.backup_name
     ));
 
-    let previous_backups = get_previous_backups(app_config)?;
+    let mut previous_backups = get_previous_backups(app_config)?;
 
     let latest = previous_backups.peek().map(|e| e.path.as_path());
     let client =
@@ -54,10 +54,13 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
                 .iter()
                 .for_each(|b| debug!(path=%&b.path.display(), modified=?&b.created, "Found previous backup path."))
         }
+
+        for _ in 0..skip {
+            previous_backups.pop();
+        }
         
         previous_backups
             .iter()
-            .skip(skip as usize)
             .try_for_each(|b| {
                 remove_dir_all(&b.path)
                     .context("Error while deleting older backup.")

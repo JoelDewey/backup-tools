@@ -10,7 +10,7 @@ use std::collections::BinaryHeap;
 use std::fs;
 use std::fs::remove_dir_all;
 use std::path::{Path, PathBuf};
-use tracing::{info, warn};
+use tracing::{debug, enabled, info, Level, warn};
 
 pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Result<()> {
     info!("Beginning file backup.");
@@ -45,9 +45,16 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
     {
         Ok(())
     } else {
-        info!("Deleting the oldest backups as we've reached our max.");
+        info!(count=&backup_count, "Deleting the oldest backups as we've reached our max.");
         let skip = app_config.max_number_of_backups.saturating_sub(1);
         let mut count = 0;
+        
+        if enabled!(Level::DEBUG) { 
+            previous_backups
+                .iter()
+                .for_each(|b| debug!(path=%&b.path.display(), modified=?&b.created, "Found previous backup path."))
+        }
+        
         previous_backups
             .iter()
             .skip(skip as usize)

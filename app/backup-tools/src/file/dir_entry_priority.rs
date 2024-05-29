@@ -7,7 +7,7 @@ use std::time::SystemTime;
 #[derive(Eq)]
 pub struct DirEntryPriority {
     pub path: PathBuf,
-    created: SystemTime,
+    pub(crate) created: SystemTime,
 }
 
 impl DirEntryPriority {

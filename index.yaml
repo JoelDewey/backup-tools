@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   backup-tools:
   - apiVersion: v2
+    appVersion: v1.7.10
+    created: "2024-07-04T13:42:31.944032411Z"
+    description: Tools for backing up data in a Kubernetes cluster.
+    digest: 7aab2503bdd38eed42a93ca5f026b70b1ebd2028d0e0459f4dc264f7b0fd4d44
+    name: backup-tools
+    type: application
+    urls:
+    - https://github.com/JoelDewey/backup-tools/releases/download/backup-tools-2.2.7/backup-tools-2.2.7.tgz
+    version: 2.2.7
+  - apiVersion: v2
     appVersion: v1.7.9
     created: "2024-07-04T13:31:24.828187202Z"
     description: Tools for backing up data in a Kubernetes cluster.
@@ -471,4 +481,4 @@ entries:
     urls:
     - backup-tools-0.1.0.tgz
     version: 0.1.0
-generated: "2024-07-04T13:31:24.828598878Z"
+generated: "2024-07-04T13:42:31.944438011Z"

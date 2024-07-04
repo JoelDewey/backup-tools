@@ -17,7 +17,7 @@ reached; if configured, then after creating the latest backup the oldest backup 
 
 backup-tools requires the following to be installed:
 
-* Rust 1.73 or greater.
+* The latest Rust toolchain.
 * `rsync`
 * `tar`
 * `pg_dump` (commonly in a `postgresql-client` package)
@@ -29,7 +29,7 @@ working with a cluster's API to be present unless `SCALE_DEPLOYMENT_ENABLED` is 
 
 ## Building
 
-backup-tools currently targets Rust 1.73 and is intended to be compatible with musl.
+Please see the [Dockerfile](Dockerfile) for the latest version of Rust that backup-tools has been built against.
 
 Builds can be ran via `cargo`: `cargo build --release`
 

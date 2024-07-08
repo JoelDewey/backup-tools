@@ -4,6 +4,7 @@ use crate::file::backup_files;
 use anyhow::Result;
 use crossbeam::channel::{unbounded, Receiver};
 use envy::from_env;
+use rustls::crypto;
 use tracing::info;
 
 mod app_config;
@@ -14,8 +15,9 @@ mod k8s;
 
 fn main() -> Result<()> {
     dotenvy::dotenv().ok();
-
     tracing_subscriber::fmt::init();
+    crypto::aws_lc_rs::default_provider().install_default().expect("Failed to install rustls crypto provider.");
+    
     info!("Beginning backup process...");
 
     let (tx, rx) = unbounded();

@@ -4,12 +4,20 @@ use rustls::RootCertStore;
 use rustls_native_certs::load_native_certs;
 use std::fs::File;
 use std::io::BufReader;
+use tracing::warn;
 
 pub fn install(config: &K8sConfig) -> Result<RootCertStore> {
     let mut roots = RootCertStore::empty();
 
     // Add certs from native store.
-    for native_cert in load_native_certs()? {
+    let cert_result = load_native_certs();
+    
+    cert_result
+        .errors
+        .iter()
+        .for_each(|error| warn!(ex=?error, "Encountered an error while loading a certificate from the native store."));
+    
+    for native_cert in cert_result.certs {
         roots.add(native_cert)?;
     }
 

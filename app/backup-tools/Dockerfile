@@ -1,7 +1,7 @@
 ARG RUST_VERSION=1.84
 ARG ALPINE_VERSION=3.21
 
-FROM rust:${RUST_VERSION}-alpine as build
+FROM rust:${RUST_VERSION}-alpine AS build
 WORKDIR /usr/src/myapp
 
 COPY . .

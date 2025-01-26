@@ -4,7 +4,9 @@ use anyhow::{anyhow, Context, Result};
 use serde::Serialize;
 use std::sync::Arc;
 use tracing::debug;
-use ureq::{Error, MiddlewareNext, Request, Response};
+use ureq::Agent;
+use ureq::{Error, Request, Response};
+use ureq::middleware::MiddlewareNext;
 use url::Url;
 use crate::k8s::workload_type::WorkloadType;
 
@@ -71,7 +73,7 @@ impl DefaultK8sClient {
             .with_root_certificates(root_store)
             .with_no_client_auth();
 
-        let agent = ureq::AgentBuilder::new()
+        let agent = Agent::config_builder()
             .tls_config(Arc::new(tls_config))
             .middleware(logging_middleware)
             .build();

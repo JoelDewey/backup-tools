@@ -52,7 +52,7 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
         if enabled!(Level::DEBUG) { 
             previous_backups
                 .iter()
-                .for_each(|b| debug!(path=%&b.path.display(), modified=?&b.created, "Found previous backup path."))
+                .for_each(|b| debug!(path=%b.path.display(), modified=?b.created, "Found previous backup path."))
         }
 
         for _ in 0..skip {
@@ -66,7 +66,7 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
                     .context("Error while deleting older backup.")
                     .map(|r| {
                         count += 1;
-                        info!(path=%&b.path.display(), "Deleted backup at the given path.");
+                        info!(path=%b.path.display(), "Deleted backup at the given path.");
                         r
                     })
             })

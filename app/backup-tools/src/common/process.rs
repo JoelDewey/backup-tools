@@ -100,13 +100,13 @@ pub fn wait_for_child_with_redirection(
             recv(sleep) -> _ => {
                 if start.elapsed() <= timeout {
                     debug!(
-                        time_elapsed_seconds=&start.elapsed().as_secs(),
+                        time_elapsed_seconds=start.elapsed().as_secs(),
                         "Process still running, waiting another {} seconds.",
                         WAIT_DURATION_SECS
                     );
                 } else {
                     warn!(
-                        time_elapsed_seconds=&start.elapsed().as_secs(),
+                        time_elapsed_seconds=start.elapsed().as_secs(),
                         timeout_seconds=timeout.as_secs(),
                         "Reached timeout while waiting for process completion, killing the process."
                     );

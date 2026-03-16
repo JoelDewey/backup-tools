@@ -1,7 +1,7 @@
 [package]
 name = "backup-tools"
 version = "1.7.16"
-edition = "2021"
+edition = "2024"
 authors = ["Joel Dewey"]
 description = "A Rust application to coordinate backups of applications hosted in my home Kubernetes cluster."
 license = "GPL-3.0-only"

@@ -4,7 +4,10 @@ use anyhow::{anyhow, Context, Result};
 use serde::Serialize;
 use std::sync::Arc;
 use tracing::debug;
-use ureq::{Error, MiddlewareNext, Request, Response};
+use ureq::http::{Request, Response};
+use ureq::middleware::MiddlewareNext;
+use ureq::tls::{RootCerts, TlsConfig};
+use ureq::{Body, SendBody};
 use url::Url;
 use crate::k8s::workload_type::WorkloadType;
 
@@ -14,39 +17,36 @@ pub trait K8sClient {
     fn scale(&self, namespace: &str, name: &str, count: i32) -> Result<()>;
 }
 
-fn logging_middleware(req: Request, next: MiddlewareNext) -> Result<Response, ureq::Error> {
-    let method = String::from(req.method());
-    let url = String::from(req.url());
-    debug!("K8s Client Begin: {} {}", &method, &url);
+fn logging_middleware(req: Request<SendBody>, next: MiddlewareNext) -> Result<Response<Body>, ureq::Error> {
+    let method = req.method().clone();
+    let uri = req.uri().clone();
+    debug!("K8s Client Begin: {} {}", method, uri);
 
     let result = next.handle(req);
     result
         .inspect(|r| {
             debug!(
-                "K8s Client End: {} {} - {} {}",
+                "K8s Client End: {} {} - {}",
                 method,
-                r.get_url(),
+                uri,
                 r.status(),
-                r.status_text()
             )
         })
         .inspect_err(|e: &ureq::Error| {
             match &e {
-                Error::Status(code, response) => {
+                ureq::Error::StatusCode(code) => {
                     tracing::error!(
-                        "K8s Client HTTP Error: {} {} - {} {}",
+                        "K8s Client HTTP Error: {} {} - {}",
                         method,
-                        url,
+                        uri,
                         code,
-                        response.status_text()
                     );
                 }
                 _ => {
                     tracing::error!(
-                        kind=%e.kind(),
                         "K8s Client Error: {} {}",
                         method,
-                        url
+                        uri,
                     );
                 }
             }
@@ -66,16 +66,18 @@ impl DefaultK8sClient {
         let token = DefaultK8sClient::get_token(config)?;
         debug!("Token Byte Length: {}", &token.len());
 
-        let root_store = cert::install(config)?;
-        let tls_config = rustls::ClientConfig::builder()
-            .with_root_certificates(root_store)
-            .with_no_client_auth();
+        let certs = cert::load(config)?;
+        let tls_config = TlsConfig::builder()
+            .root_certs(RootCerts::Specific(Arc::new(certs)))
+            .build();
 
-        let agent = ureq::AgentBuilder::new()
-            .tls_config(Arc::new(tls_config))
+        let agent_config = ureq::Agent::config_builder()
+            .tls_config(tls_config)
             .middleware(logging_middleware)
             .build();
-        
+
+        let agent = ureq::Agent::from(agent_config);
+
         let workload_type = match config.workload_type {
             WorkloadType::Deployment => String::from("deployments"),
             WorkloadType::StatefulSet => String::from("statefulsets"),
@@ -120,10 +122,11 @@ impl K8sClient for DefaultK8sClient {
         let response = self
             .agent
             .get(url.as_str())
-            .set("Accept", "application/json")
-            .set("Authorization", &format!("Bearer {}", &self.token))
+            .header("Accept", "application/json")
+            .header("Authorization", &format!("Bearer {}", &self.token))
             .call()?
-            .into_json::<Deployment>()?;
+            .body_mut()
+            .read_json::<Deployment>()?;
 
         response
             .status
@@ -141,9 +144,9 @@ impl K8sClient for DefaultK8sClient {
 
         self.agent
             .patch(url.as_str())
-            .set("Accept", "application/json")
-            .set("Authorization", &format!("Bearer {}", &self.token))
-            .set("Content-Type", "application/strategic-merge-patch+json")
+            .header("Accept", "application/json")
+            .header("Authorization", &format!("Bearer {}", &self.token))
+            .header("Content-Type", "application/strategic-merge-patch+json")
             .send_json(body)?;
 
         Ok(())

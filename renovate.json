@@ -3,10 +3,13 @@
   "extends": [
     "config:recommended"
   ],
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "description": "Update backup-tools container image tag",
-      "fileMatch": ["^charts\\/backup-tools\\/Chart\\.yaml$"],
+      "managerFilePatterns": [
+        "/^charts\\/backup-tools\\/Chart\\.yaml$/"
+      ],
       "matchStrings": [
         "appVersion: '(?<currentValue>.*?)'\\s+",
         "version: '(?<currentValue>.*?)'\\s+"

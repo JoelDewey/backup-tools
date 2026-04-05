@@ -73,4 +73,29 @@ mod tests {
         assert!(actual.database_name.is_some());
         assert_eq!(db_name, actual.database_name.unwrap());
     }
+
+    #[test]
+    fn from_url_given_url_without_port_port_is_none() {
+        let url = "postgres://user:pass@localhost/db";
+        let result = PostgresConfig::from_url(url).unwrap();
+        assert!(result.port.is_none());
+    }
+
+    #[test]
+    fn from_url_given_url_without_password_password_is_empty_string() {
+        let url = "postgres://user@localhost:5432/db";
+        let result = PostgresConfig::from_url(url).unwrap();
+        assert_eq!(result.password, "");
+    }
+
+    #[test]
+    fn from_url_given_invalid_url_returns_error() {
+        assert!(PostgresConfig::from_url("not a url at all").is_err());
+    }
+
+    #[test]
+    fn from_url_given_url_with_no_host_returns_error() {
+        // A URL that parses successfully but has no host component
+        assert!(PostgresConfig::from_url("postgres:///db").is_err());
+    }
 }

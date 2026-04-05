@@ -72,4 +72,53 @@ mod test {
         // Act + Assert
         assert_eq!(files[0].cmp(&files[1]), Ordering::Less);
     }
+
+    #[test]
+    fn cmp_given_newer_returns_greater() {
+        let temp_dir = temp_dir().join("cmp_given_newer_returns_greater");
+        fs::create_dir(&temp_dir).expect("Failed to create temporary directory.");
+
+        let older_path = temp_dir.join("00_older.txt");
+        File::create(older_path).expect("Failed to create older file.");
+        sleep(Duration::from_secs(1));
+
+        let newer_path = temp_dir.join("01_newer.txt");
+        File::create(newer_path).expect("Failed to create newer file.");
+
+        let mut files = fs::read_dir(&temp_dir)
+            .expect("Failed to read temporary directory.")
+            .map(|r| DirEntryPriority::new(r.unwrap()).expect("Failed to construct DirEntryPriority"))
+            .collect::<Vec<DirEntryPriority>>();
+        files.sort_by(|a, b| a.path.cmp(&b.path));
+        fs::remove_dir_all(&temp_dir).expect("Failed to delete temporary directory.");
+
+        assert_eq!(files[1].cmp(&files[0]), Ordering::Greater);
+    }
+
+    #[test]
+    fn binary_heap_pops_newest_entry_first() {
+        let temp_dir = temp_dir().join("binary_heap_pops_newest_first");
+        fs::create_dir(&temp_dir).expect("Failed to create temporary directory.");
+
+        let older_path = temp_dir.join("00_heap_older.txt");
+        File::create(older_path).expect("Failed to create older file.");
+        sleep(Duration::from_secs(1));
+
+        let newer_path = temp_dir.join("01_heap_newer.txt");
+        File::create(newer_path).expect("Failed to create newer file.");
+
+        let mut heap: std::collections::BinaryHeap<DirEntryPriority> =
+            std::collections::BinaryHeap::new();
+        fs::read_dir(&temp_dir)
+            .expect("Failed to read temporary directory.")
+            .for_each(|entry| heap.push(DirEntryPriority::new(entry.unwrap()).unwrap()));
+        fs::remove_dir_all(&temp_dir).expect("Failed to delete temporary directory.");
+
+        let first = heap.pop().unwrap();
+        assert!(
+            first.path.ends_with("01_heap_newer.txt"),
+            "Expected the newest file to be popped first, got: {:?}",
+            first.path
+        );
+    }
 }

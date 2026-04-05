@@ -127,3 +127,84 @@ fn get_backup_client<'a>(
 
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::has_nonempty_files;
+    use std::env::temp_dir;
+    use std::fs::{self, File};
+    use std::io::Write;
+
+    fn make_test_dir(name: &str) -> std::path::PathBuf {
+        let path = temp_dir().join(format!("backup_tools_{}", name));
+        let _ = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).expect("Failed to create test directory");
+        path
+    }
+
+    #[test]
+    fn has_nonempty_files_given_empty_dir_returns_false() {
+        let dir = make_test_dir("empty_dir");
+        let result = has_nonempty_files(&dir).unwrap();
+        fs::remove_dir_all(&dir).ok();
+        assert!(!result);
+    }
+
+    #[test]
+    fn has_nonempty_files_given_file_with_content_returns_true() {
+        let dir = make_test_dir("file_with_content");
+        let mut f = File::create(dir.join("data.txt")).unwrap();
+        f.write_all(b"hello").unwrap();
+
+        let result = has_nonempty_files(&dir).unwrap();
+        fs::remove_dir_all(&dir).ok();
+        assert!(result);
+    }
+
+    #[test]
+    fn has_nonempty_files_given_zero_byte_file_returns_false() {
+        let dir = make_test_dir("zero_byte_file");
+        File::create(dir.join("empty.txt")).unwrap();
+
+        let result = has_nonempty_files(&dir).unwrap();
+        fs::remove_dir_all(&dir).ok();
+        assert!(!result);
+    }
+
+    #[test]
+    fn has_nonempty_files_given_nested_nonempty_file_returns_true() {
+        let dir = make_test_dir("nested_nonempty");
+        let sub = dir.join("subdir");
+        fs::create_dir(&sub).unwrap();
+        let mut f = File::create(sub.join("data.txt")).unwrap();
+        f.write_all(b"data").unwrap();
+
+        let result = has_nonempty_files(&dir).unwrap();
+        fs::remove_dir_all(&dir).ok();
+        assert!(result);
+    }
+
+    #[test]
+    fn has_nonempty_files_given_only_nested_zero_byte_files_returns_false() {
+        let dir = make_test_dir("nested_zero_byte");
+        let sub = dir.join("subdir");
+        fs::create_dir(&sub).unwrap();
+        File::create(sub.join("empty.txt")).unwrap();
+
+        let result = has_nonempty_files(&dir).unwrap();
+        fs::remove_dir_all(&dir).ok();
+        assert!(!result);
+    }
+
+    #[test]
+    fn has_nonempty_files_given_mix_of_empty_and_nonempty_returns_true() {
+        let dir = make_test_dir("mix_empty_nonempty");
+        File::create(dir.join("empty.txt")).unwrap();
+        let mut f = File::create(dir.join("data.txt")).unwrap();
+        f.write_all(b"x").unwrap();
+
+        let result = has_nonempty_files(&dir).unwrap();
+        fs::remove_dir_all(&dir).ok();
+        assert!(result);
+    }
+}

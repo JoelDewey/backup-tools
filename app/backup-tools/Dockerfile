@@ -6,7 +6,7 @@ WORKDIR /usr/src/myapp
 
 COPY . .
 RUN apk add --no-cache musl-dev \
-    && cargo build --release
+    && cargo build --release --locked
 
 
 FROM alpine:${ALPINE_VERSION}

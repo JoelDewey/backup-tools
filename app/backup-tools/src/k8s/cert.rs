@@ -1,8 +1,8 @@
 use crate::k8s::K8sConfig;
 use anyhow::Result;
 use rustls_native_certs::load_native_certs;
-use std::fs::File;
-use std::io::BufReader;
+use rustls_pki_types::CertificateDer;
+use rustls_pki_types::pem::PemObject;
 use tracing::warn;
 use ureq::tls::Certificate;
 
@@ -23,9 +23,7 @@ pub fn load(config: &K8sConfig) -> Result<Vec<Certificate<'static>>> {
 
     // Load k8s cert.
     let path = &config.cacrt_path;
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    for cert in rustls_pemfile::certs(&mut reader) {
+    for cert in CertificateDer::pem_file_iter(path)? {
         let cert = cert?;
         certs.push(Certificate::from_der(cert.as_ref()).to_owned());
     }

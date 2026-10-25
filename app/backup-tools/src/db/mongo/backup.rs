@@ -39,7 +39,7 @@ fn get_mongo_config() -> Result<MongoConfig> {
 
 fn execute_mongodump(config: &MongoConfig, save_path: &Path) -> Result<Child> {
     let port = &config.port.unwrap_or(config::DEFAULT_PORT);
-    let connection_string = Url::parse(&format!("mongodb://{}:{}", &config.host, port))
+    let connection_string = Url::parse(&format!("mongodb://{}:{}", config.host, port))
         .context("Error encountered while creating MongoDB connection string.")?;
 
     // mongodump writes its normal output to stderr as it can be configured to output the backup data to stdout.

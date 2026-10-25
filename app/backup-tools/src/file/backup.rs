@@ -25,7 +25,7 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
     let filename = PathBuf::from(format!(
         "{}_{}",
         now.format("%F_%H%M%S"),
-        &app_config.backup_name
+        app_config.backup_name
     ));
 
     let mut previous_backups = get_previous_backups(app_config)?;
@@ -64,15 +64,13 @@ pub fn backup_files(app_config: &AppConfig, shutdown_rx: &Receiver<()>) -> Resul
             .try_for_each(|b| {
                 remove_dir_all(&b.path)
                     .context("Error while deleting older backup.")
-                    .map(|r| {
+                    .inspect(|_| {
                         count += 1;
                         info!(path=%b.path.display(), "Deleted backup at the given path.");
-                        r
                     })
             })
-            .map(|r| {
+            .inspect(|_| {
                 info!(total_deletes = count, "Finished deleting oldest backups.");
-                r
             })
     }
 }

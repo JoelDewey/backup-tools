@@ -66,10 +66,10 @@ impl<'a> RsyncBackupClient<'a> {
                 .arg("--super");
         }
 
-        if let Some(whole_file) = &self.rsync_config.whole_file {
-            if *whole_file {
-                builder_ref = builder_ref.arg("--whole-file");
-            }
+        if let Some(whole_file) = &self.rsync_config.whole_file
+            && *whole_file
+        {
+            builder_ref = builder_ref.arg("--whole-file");
         }
 
         if let Some(excludes) = &self.rsync_config.exclude_file_path {

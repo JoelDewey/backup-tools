@@ -92,7 +92,7 @@ impl DefaultK8sClient {
     }
 
     fn get_url(config: &K8sConfig) -> Result<Url> {
-        let host_with_scheme = format!("https://{}", &config.service_host);
+        let host_with_scheme = format!("https://{}", config.service_host);
         let mut result = Url::parse(&host_with_scheme)?;
         result
             .set_port(Some(config.service_port_https))
@@ -115,7 +115,7 @@ impl K8sClient for DefaultK8sClient {
     fn get_available_replicas(&self, namespace: &str, name: &str) -> Result<i32> {
         let path = format!(
             "/apis/apps/v1/namespaces/{}/{}/{}",
-            namespace, &self.workload_type, name
+            namespace, self.workload_type, name
         );
         let url = self.kube_base_url.join(&path)?;
 
@@ -123,7 +123,7 @@ impl K8sClient for DefaultK8sClient {
             .agent
             .get(url.as_str())
             .header("Accept", "application/json")
-            .header("Authorization", &format!("Bearer {}", &self.token))
+            .header("Authorization", &format!("Bearer {}", self.token))
             .call()?
             .body_mut()
             .read_json::<Deployment>()?;
@@ -137,7 +137,7 @@ impl K8sClient for DefaultK8sClient {
     fn scale(&self, namespace: &str, name: &str, count: i32) -> Result<()> {
         let path = format!(
             "/apis/apps/v1/namespaces/{}/{}/{}",
-            namespace, &self.workload_type, name
+            namespace, self.workload_type, name
         );
         let url = self.kube_base_url.join(&path)?;
         let body = ScalePatch::new(count);
@@ -145,7 +145,7 @@ impl K8sClient for DefaultK8sClient {
         self.agent
             .patch(url.as_str())
             .header("Accept", "application/json")
-            .header("Authorization", &format!("Bearer {}", &self.token))
+            .header("Authorization", &format!("Bearer {}", self.token))
             .header("Content-Type", "application/strategic-merge-patch+json")
             .send_json(body)?;
 
